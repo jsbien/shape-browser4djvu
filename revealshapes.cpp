@@ -131,6 +131,8 @@ if (!poliqarp)
 				if (test_run)
 					std::cout << "Processing blits. " << std::endl;
 				for (int i = 0; i < blit_count; i++) {
+                    // Count shape usage
+                    shape_stats[blit->shapeno].occurrences++;
 					JB2Blit *blit = jimg->get_blit(i);
 					if (blit) {
 						JB2Shape shape = jimg->get_shape(blit->shapeno);
