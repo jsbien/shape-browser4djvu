@@ -57,6 +57,26 @@ std::ostream* out_stream = &std::cout;
 std::ofstream out_file;
 char *output_file = nullptr;
 bool test_run = false, poliqarp = false;
+
+struct ShapeStats {
+    int depth = 0;
+    int descendants = 0;
+    int siblings = 0;
+    int occurrences = 0;
+    int width = 0;
+    int height = 0;
+};
+
+std::map<int, ShapeStats> shape_stats;
+
+int compute_depth(JB2Shape* shape) {
+    int depth = 0;
+    while (shape && shape->parent) {
+        shape = shape->parent;
+        depth++;
+    }
+    return depth;
+}
 char *filename;
 
 
