@@ -71,7 +71,6 @@ std::map<int, ShapeStats> shape_stats;
 
 
 
-int compute_depth(JB2Shape *shape) {
 int compute_depth(JB2Shape *shape, JB2Image *jimg) {
     int depth = 0;
     while (shape && shape->parent >= 0) {
