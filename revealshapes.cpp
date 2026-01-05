@@ -41,7 +41,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <filesystem>
-#define VERSION "0.9.0"
+#define REVEALSHAPES_VERSION "0.9.0"
 #include <algorithm> 
 
 using namespace std;
