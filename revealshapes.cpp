@@ -79,8 +79,7 @@ int compute_depth(JB2Shape *shape) {
     }
     return depth;
 }
-    return depth;
-}
+
 char *filename;
 
 
