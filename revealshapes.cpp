@@ -67,6 +67,8 @@ struct ShapeStats {
     int height = 0;
 };
 
+// Declare filename before usage
+std::string filename;
 std::map<int, ShapeStats> shape_stats;
 
 
