@@ -130,8 +130,8 @@ if (!poliqarp)
 				int sh_count = jimg->get_shape_count();
                 // Build shape hierarchy stats
                 for (int s = 0; s < sh_count; ++s) {
-                    JB2Shape* shape = jimg->get_shape(s);
-                    if (!shape) continue;
+                    JB2Shape shape = jimg->get_shape(s); // returned by value
+                    if (!shape.bits) continue; // null-check: no shape bitmap
 
                     ShapeStats &stats = shape_stats[s];
                     stats.depth = compute_depth(shape);
