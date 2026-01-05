@@ -138,9 +138,11 @@ if (!poliqarp)
                         stats.width = shape.bits->columns();
                         stats.height = shape.bits->rows();
 
-                        if (shape.parent) {
-                            shape_stats[shape.parent->shapeno].descendants++;
-                            shape_stats[shape.parent->shapeno].siblings = shape.parent->children.size();
+                        if (shape.parent >= 0) {
+                            JB2Shape &parent = jimg->get_shape(shape.parent);
+                            shape_stats[parent.shapeno].descendants++;
+                            shape_stats[parent.shapeno].siblings = parent.children.size();
+                        }
                         }
                     }
 				int blit_count = jimg->get_blit_count();
