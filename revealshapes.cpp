@@ -149,9 +149,10 @@ if (!poliqarp)
 					std::cout << "Processing blits. " << std::endl;
 				for (int i = 0; i < blit_count; i++) {
                     // Count shape usage
-                    shape_stats[blit->shapeno].occurrences++;
-					JB2Blit *blit = jimg->get_blit(i);
-					if (blit) {
+				  for (int i = 0; i < blit_count; i++) {
+				    JB2Blit *blit = jimg->get_blit(i);
+				    if (blit) {
+				      shape_stats[blit->shapeno].occurrences++;
 						JB2Shape shape = jimg->get_shape(blit->shapeno);
 						if (poliqarp ) {
 							//<file-name> d-<blit number>-<blit shapeno>;file:<file-name>?djvuopts=&highlight=<left>,<blit bottom>,<shape bit columns>,<rows>&page=<page number + 1>; <file-name> d-<blit number>-<blit shapeno>;
