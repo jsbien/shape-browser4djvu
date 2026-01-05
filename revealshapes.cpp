@@ -83,7 +83,6 @@ int compute_depth(JB2Shape *shape, JB2Image *jimg) {
 
 
 
-
 int process_document(int page_from, int page_to, GP<DjVuDocument> doc) {
 	const int pages = doc->get_pages_num();
 	int page_start, page_limit;
