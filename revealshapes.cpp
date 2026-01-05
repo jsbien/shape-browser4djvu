@@ -139,7 +139,6 @@ if (!poliqarp)
                         stats.height = shape.bits->rows();
 
                         if (shape.parent >= 0) {
-                            JB2Shape &parent = jimg->get_shape(shape.parent);
 			    const JB2Shape &parent = jimg->get_shape(shape.parent);
 			    shape_stats[parent.shapeno].descendants++;
 			    shape_stats[parent.shapeno].siblings = parent.children.size();
