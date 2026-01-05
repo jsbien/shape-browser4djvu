@@ -130,21 +130,20 @@ if (!poliqarp)
 				string page_name = (string) djvu_file->get_url().fname();
 				int sh_count = jimg->get_shape_count();
                 // Build shape hierarchy stats
-                    JB2Shape *shape = jimg->get_shape(s);
-                    if (!shape || !shape->bits) continue;
+                    for (int s = 0; s < jimg->get_shape_count(); ++s) {
+                        JB2Shape &shape = jimg->get_shape(s);
+                        if (!shape.bits) continue;
 
-                    ShapeStats &stats = shape_stats[s];
-                    stats.depth = compute_depth(shape);
-                    stats.width = shape->bits->columns();
-                    stats.height = shape->bits->rows();
+                        ShapeStats &stats = shape_stats[s];
+                        stats.depth = compute_depth(&shape);
+                        stats.width = shape.bits->columns();
+                        stats.height = shape.bits->rows();
 
-                    if (shape->parent) {
-                        shape_stats[shape->parent->shapeno].descendants++;
-                        shape_stats[shape->parent->shapeno].siblings = shape->parent->children.size();
+                        if (shape.parent) {
+                            shape_stats[shape.parent->shapeno].descendants++;
+                            shape_stats[shape.parent->shapeno].siblings = shape.parent->children.size();
+                        }
                     }
-                        shape_stats[shape->parent->shapeno].siblings = shape->parent->children.size();
-                    }
-                }
 				int blit_count = jimg->get_blit_count();
                     JB2Blit *blit = jimg->get_blit(i);
                     if (blit) {
