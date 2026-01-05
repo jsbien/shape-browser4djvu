@@ -41,7 +41,7 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <filesystem>
-#define REVEALSHAPES_VERSION "0.9.0"
+// Removed redefinition to avoid conflict with config.h
 #include <algorithm> 
 
 using namespace std;
