@@ -140,13 +140,15 @@ if (!poliqarp)
 
                         if (shape.parent >= 0) {
                             JB2Shape &parent = jimg->get_shape(shape.parent);
-                            shape_stats[parent.shapeno].descendants++;
-                            shape_stats[parent.shapeno].siblings = parent.children.size();
+			    const JB2Shape &parent = jimg->get_shape(shape.parent);
+			    shape_stats[parent.shapeno].descendants++;
+			    shape_stats[parent.shapeno].siblings = parent.children.size();
                         }
                         }
                     }
-				int blit_count = jimg->get_blit_count();
-                    JB2Blit *blit = jimg->get_blit(i);
+			int blit_count = jimg->get_blit_count();
+                        for (int i = 0; i < jimg->get_blit_count(); ++i) {
+			  JB2Blit *blit = jimg->get_blit(i);
                     if (blit) {
                         shape_stats[blit->shapeno].occurrences++;
 					std::cout << "Processing blits. " << std::endl;
