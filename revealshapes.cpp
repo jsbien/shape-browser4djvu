@@ -134,7 +134,7 @@ if (!poliqarp)
                         if (!shape.bits) continue;
 
                         ShapeStats &stats = shape_stats[s];
-                        stats.depth = compute_depth(&shape);
+                        stats.depth = compute_depth(&shape, jimg);
                         stats.width = shape.bits->columns();
                         stats.height = shape.bits->rows();
 
