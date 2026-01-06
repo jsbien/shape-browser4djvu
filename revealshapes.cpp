@@ -110,6 +110,7 @@ if (!poliqarp)
 
 		if (!djvu_page) {
 			std::cout << "Failed to get DjVuImage for page" << page_number << std::endl;
+			return EXIT_FAILURE;
 		} else {
 
 			GP<DjVuFile> djvu_file = djvu_page->get_djvu_file();
@@ -168,7 +169,7 @@ if (!poliqarp)
 *out_stream << "file:" << sorigString << "?djvuopts=&highlight=" << blit->left << "," << blit->bottom << "," << shape.bits->columns() << "," << shape.bits->rows() << "&page=" << (page_number + 1) << ";";
 *out_stream << s.filename() << " d-" << i << "-" << blit->shapeno << std::endl;
 						} else {
-*out_stream << ((blit->shapeno < inh_sh_count)?"s":"d") << "," << (page_number + 1) << "," << i << "," << blit->shapeno  << "," << shape.bits->columns() << ","  << shape.bits->rows() << ","  << shape.bits->rowsize() << "," << blit->bottom << ","  << blit->left << "," << shape_stats[blit->shapeno].depth << "," << shape_stats[blit->shapeno].descendants << "," << shape_stats[blit->shapeno].siblings << "," << shape_stats[blit->shapeno].occurrences << endl;
+						  *out_stream << ((blit->shapeno < static_cast<unsigned int>(inh_sh_count))?"s":"d") << "," << (page_number + 1) << "," << i << "," << blit->shapeno  << "," << shape.bits->columns() << ","  << shape.bits->rows() << ","  << shape.bits->rowsize() << "," << blit->bottom << ","  << blit->left << "," << shape_stats[blit->shapeno].depth << "," << shape_stats[blit->shapeno].descendants << "," << shape_stats[blit->shapeno].siblings << "," << shape_stats[blit->shapeno].occurrences << endl;
 						}
 					}
 				}
