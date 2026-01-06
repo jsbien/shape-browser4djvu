@@ -116,10 +116,14 @@ if (!poliqarp)
 			GP<DjVuFile> djvu_file = djvu_page->get_djvu_file();
 			GP<JB2Image> jimg = djvu_page->get_fgjb();
 			if (!djvu_file) {
-				std::cout << "Failed to get DjVUFile for page " << page_number << std::endl;
-			} else if (!jimg) {
-				std::cout << "Failed to get JB2Image for page " << page_number << std::endl;
-			} else {//export shapes
+			  std::cout << "Failed to get DjVUFile for page " << page_number << std::endl;
+			  return EXIT_FAILURE;  // ✅ Add this
+			}
+			else if (!jimg) {
+			  std::cout << "Failed to get JB2Image for page " << page_number << std::endl;
+			  return EXIT_FAILURE;  // ✅ Add this
+			}
+		        else {//export shapes
 				if (test_run)
 					std::cout << "Processing page " << page_number << " containing " << jimg->get_shape_count() << " shapes, " << jimg->get_inherited_shape_count() << " of them inherited." << std::endl;
 				GP<JB2Dict> inherited_dictionary = jimg->get_inherited_dict();
