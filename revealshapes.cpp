@@ -127,7 +127,7 @@ if (!poliqarp)
 
 
 				string page_name = (string) djvu_file->get_url().fname();
-				int sh_count = jimg->get_shape_count();
+				// int sh_count = jimg->get_shape_count();
                 // Build shape hierarchy stats
                     for (int s = 0; s < jimg->get_shape_count(); ++s) {
                         JB2Shape &shape = jimg->get_shape(s);
@@ -139,7 +139,7 @@ if (!poliqarp)
                         stats.height = shape.bits->rows();
 
                         if (shape.parent >= 0) {
-			    const JB2Shape &parent = jimg->get_shape(shape.parent);
+			  // const JB2Shape &parent = jimg->get_shape(shape.parent);
 			    int parent_no = shape.parent;
 			    shape_stats[parent_no].descendants++;
 // Comment out siblings for now, unless you compute them manually
