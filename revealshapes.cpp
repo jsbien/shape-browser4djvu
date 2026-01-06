@@ -123,7 +123,7 @@ if (!poliqarp)
 					std::cout << "Processing page " << page_number << " containing " << jimg->get_shape_count() << " shapes, " << jimg->get_inherited_shape_count() << " of them inherited." << std::endl;
 				GP<JB2Dict> inherited_dictionary = jimg->get_inherited_dict();
 				// int inh_dict_id = -1;
-				int inh_sh_count = jimg->get_inherited_shape_count();
+				// int inh_sh_count = jimg->get_inherited_shape_count();
 
 
 				string page_name = (string) djvu_file->get_url().fname();
@@ -140,14 +140,15 @@ if (!poliqarp)
 
                         if (shape.parent >= 0) {
 			    const JB2Shape &parent = jimg->get_shape(shape.parent);
-			    int parent_no = parent.get_shapeno();
-				shape_stats[parent_no].descendants++;
+			    int parent_no = shape.parent;
+			    shape_stats[parent_no].descendants++;
 // Comment out siblings for now, unless you compute them manually
 // shape_stats[parent_no].siblings = ???;
 						}
                         }
                     }
 			int blit_count = jimg->get_blit_count();
+			int inh_sh_count = jimg->get_inherited_shape_count();
                         for (int i = 0; i < jimg->get_blit_count(); ++i) {
 			  JB2Blit *blit = jimg->get_blit(i);
                     if (blit) {
@@ -175,6 +176,8 @@ if (!poliqarp)
 		}
 	}
 	return EXIT_SUCCESS;
+}
+	}
 }
 void usage(const char *program_name);
 
