@@ -140,9 +140,11 @@ if (!poliqarp)
 
                         if (shape.parent >= 0) {
 			    const JB2Shape &parent = jimg->get_shape(shape.parent);
-			    shape_stats[parent.shapeno].descendants++;
-			    shape_stats[parent.shapeno].siblings = parent.children.size();
-                        }
+			    int parent_no = parent.get_shapeno();
+				shape_stats[parent_no].descendants++;
+// Comment out siblings for now, unless you compute them manually
+// shape_stats[parent_no].siblings = ???;
+						}
                         }
                     }
 			int blit_count = jimg->get_blit_count();
