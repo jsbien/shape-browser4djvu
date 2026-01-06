@@ -261,7 +261,7 @@ int main(int argc, char **argv) {
 
 		filename = argv[optind];
 
-		const GURL url(GUTF8String(filename));
+		const GURL url{GURL::Filename::UTF8(GUTF8String(filename))};
 
                 GP<DjVuDocument> doc = DjVuDocument::create_wait(url);
  
