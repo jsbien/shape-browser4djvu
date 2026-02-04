@@ -1,0 +1,32 @@
+# Project Info
+PROJECT_NAME           = RevealShapes
+PROJECT_BRIEF          = Documentation for the shape analysis tool
+OUTPUT_DIRECTORY       = docs/doxygen
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+
+# Source Files
+INPUT                  = revealshapes.cpp libdjvu/
+FILE_PATTERNS          = *.cpp *.h
+RECURSIVE              = YES
+
+# Comment Styles
+JAVADOC_AUTOBRIEF      = YES
+MULTILINE_CPP_IS_BRIEF = YES
+EXTENSION_MAPPING      = cpp=C++
+
+# Enable Diagrams (optional, needs Graphviz)
+HAVE_DOT               = YES
+DOT_IMAGE_FORMAT       = svg
+CALL_GRAPH             = YES
+CALLER_GRAPH           = YES
+
+# Indexing & Navigation
+GENERATE_TREEVIEW      = YES
+FULL_PATH_NAMES        = NO
+
+# Warnings
+WARN_IF_UNDOCUMENTED   = YES
+
+# Output Control
+QUIET                  = NO
