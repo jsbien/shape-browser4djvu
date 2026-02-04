@@ -1,0 +1,15 @@
+digraph ProcessDocument {
+    rankdir=TB;
+    node [shape=box, style=filled, fillcolor=lightgray, fontname="Helvetica"];
+
+    Start -> GetDocument -> ForEachPage -> GetJB2Image -> LoopOverShapes -> GetBitmap -> ListBlits -> PrintInfo;
+
+    Start [label="Start"];
+    GetDocument [label="Get document"];
+    ForEachPage [label="For each page"];
+    GetJB2Image [label="Get JB2 image"];
+    LoopOverShapes [label="Loop over shapes"];
+    GetBitmap [label="Get bitmap"];
+    ListBlits [label="List blits"];
+    PrintInfo [label="Print info"];
+}
