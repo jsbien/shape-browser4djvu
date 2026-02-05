@@ -3,7 +3,6 @@ bin_PROGRAMS = revealshapes
 revealshapes_SOURCES = \
     revealshapes.cpp \
     libdjvu/DjVuDocument.cpp \
-    libdjvu/atomic.cpp \
     libdjvu/DjVmDir.cpp \
     libdjvu/GContainer.cpp \
     libdjvu/GException.cpp \
