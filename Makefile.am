@@ -21,8 +21,7 @@ revealshapes_SOURCES = \
     libdjvu/DjVuToPS.cpp \
     libdjvu/GBitmap.cpp \
     libdjvu/GURL.cpp \
-    libdjvu/IFFByteStream.cpp \
-    libdjvu/XmlParser.cpp
+    libdjvu/IFFByteStream.cpp
 
 # Include local headers from libdjvu and external
 AM_CPPFLAGS = -Ilibdjvu -Iexternal
