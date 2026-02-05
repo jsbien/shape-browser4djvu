@@ -19,7 +19,6 @@ revealshapes_SOURCES = \
     libdjvu/DjVuPort.cpp \
     libdjvu/DjVuText.cpp \
     libdjvu/DjVuToPS.cpp \
-    libdjvu/DjVuVersion.cpp \
     libdjvu/GBitmap.cpp \
     libdjvu/GURL.cpp \
     libdjvu/IFFByteStream.cpp \
