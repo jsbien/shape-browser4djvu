@@ -236,8 +236,8 @@ int main(int argc, char **argv)
       out_stream = &out_file;
     }
 
-    GUTF8String url = GUTF8String("file:") + GUTF8String(filename.c_str());
-    GP<DjVuDocument> doc = DjVuDocument::create_wait(GURL(url));
+    const GURL::Filename::UTF8 url(filename.c_str());
+    GP<DjVuDocument> doc = DjVuDocument::create_wait(url);
 
 
     return process_document(page_from, page_to, doc);
