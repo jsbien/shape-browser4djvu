@@ -44,6 +44,9 @@
 // Removed redefinition to avoid conflict with config.h
 #include <algorithm> 
 
+#include <map>
+#include <set>
+
 using namespace std;
 
 typedef std::pair<int, int> IntPair;
@@ -70,6 +73,47 @@ struct ShapeStats {
 // Declare filename before usage
 std::string filename;
 std::map<int, ShapeStats> shape_stats;
+
+// Inherited dictionary ordinals (document order)
+static std::map<const JB2Dict*, int> inherited_dict_id;
+static bool inherited_dicts_initialized = false;
+
+static void
+init_inherited_dictionaries(GP<DjVuDocument> doc)
+{
+  if (inherited_dicts_initialized)
+    return;
+
+  std::set<const JB2Dict*> seen;
+  int next_id = 1; // 0 reserved for page-local
+
+  int page_count = doc->get_pages_num();
+
+  for (int p = 1; p <= page_count; ++p)
+  {
+    GP<DjVuImage> img = doc->get_page(p);
+    if (!img)
+      continue;
+
+    GP<JB2Image> jb2 = img->get_fgjb();
+    if (!jb2)
+      continue;
+
+    GP<JB2Dict> dict = jb2->get_inherited_dict();
+    if (!dict)
+      continue;
+
+    const JB2Dict* dict_ptr = dict.get();
+
+    if (!seen.count(dict_ptr))
+    {
+      inherited_dict_id[dict_ptr] = next_id++;
+      seen.insert(dict_ptr);
+    }
+  }
+
+  inherited_dicts_initialized = true;
+}
 
 
 
@@ -238,6 +282,8 @@ int main(int argc, char **argv)
 
     const GURL::Filename::UTF8 url(filename.c_str());
     GP<DjVuDocument> doc = DjVuDocument::create_wait(url);
+
+    init_inherited_dictionaries(doc);
 
 
     return process_document(page_from, page_to, doc);
