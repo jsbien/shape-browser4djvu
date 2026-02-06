@@ -103,7 +103,7 @@ init_inherited_dictionaries(GP<DjVuDocument> doc)
     if (!dict)
       continue;
 
-    const JB2Dict* dict_ptr = dict.get();
+    const JB2Dict* dict_ptr = dict.operator->();
 
     if (!seen.count(dict_ptr))
     {
