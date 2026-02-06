@@ -1,3 +1,4 @@
+s
 /***
  * 
  * Exportshapes is a program that extracts shape dictionary data 
@@ -200,103 +201,53 @@ void usage(const char *program_name) {
     std::cout << "  -h             Show this help message and exit" << std::endl;
 }
 
+int main(int argc, char **argv)
+{
+  try {
+    int c;
+    int page_from = 1, page_to = -1;
+    bool links_only = false;
 
-int main(int argc, char **argv) {
-	try {
-		int c;
-		int page_from = 1 , page_to = -1;
-		bool test_run = false, links_only = false;
-
-        // Extend option string to include 'o' and 'h'
-        while ((c = getopt (argc, argv, "Tlpf:t:o:h")) != -1) {
-			switch (c) {
-				case 'T':
-        case 'o':
-            output_file = optarg;
-            break;
+    while ((c = getopt(argc, argv, "Tlpf:t:o:h")) != -1) {
+      switch (c) {
+        case 'T': test_run = true; break;
+        case 'f': page_from = atoi(optarg); break;
+        case 't': page_to = atoi(optarg); break;
+        case 'p': poliqarp = true; break;
+        case 'l': links_only = true; break;
+        case 'o': output_file = optarg; break;
         case 'h':
-            usage(argv[0]);
-            exit(EXIT_SUCCESS);
-					test_run = true;
-					break;
-				case 'f':
-					page_from = atoi(optarg);
-					break;
-				case 't':
-					page_to = atoi(optarg);
-					break;
-				case 'p':
-					poliqarp = true;
-					break;
-				case 'l':
-					links_only = true;
-					break;
-				case '?':
-		    		cerr << "Unknown option: " << optopt << endl;
-		         return 1;
-		       default:
-		         cerr << "Usage: " << argv[0] << " [-T] [-f page_from] [-t page_to] [-l] filename" << endl;
-    // Open output file if specified
-    if (output_file) {
-        out_file.open(output_file);
-        if (!out_file) {
-            std::cerr << "Error: Cannot open output file: " << output_file << std::endl;
-            exit(EXIT_FAILURE);
-        }
-        out_stream = &out_file;
+          usage(argv[0]);
+          return EXIT_SUCCESS;
+        default:
+          usage(argv[0]);
+          return EXIT_FAILURE;
+      }
     }
-		         return 1;
-		    }
-        // Open output file if specified (moved from default block)
-        if (output_file) {
-            out_file.open(output_file);
-            if (!out_file) {
-                std::cerr << "Error: Cannot open output file: " << output_file << std::endl;
-                exit(EXIT_FAILURE);
-            }
-            out_stream = &out_file;
-        }
-		}
 
-		if (optind == argc) {
-			cerr << "Filename argument is missing." << endl;
-			return 1;
-		}
+    if (optind >= argc)
+      throw std::runtime_error("missing input filename");
 
-		filename = argv[optind];
+    filename = argv[optind];
 
-		const GURL url(GUTF8String(filename.c_str()));
+    if (output_file) {
+      out_file.open(output_file);
+      if (!out_file)
+        throw std::runtime_error("cannot open output file");
+      out_stream = &out_file;
+    }
 
-                GP<DjVuDocument> doc = DjVuDocument::create_wait(url);
- 
-                if (!doc) {
-                       cerr << "cannot open file" << endl;
-                       return -1;
-                } else {
-	               return process_document(page_from, page_to, doc);
-		}
+    GP<DjVuDocument> doc = DjVuDocument::create_wait(
+        GURL(GUTF8String(filename.c_str())));
 
-		// Additional argument checking if needed
-		
-		// Database operations removed
-		
-		// Remaining logic for processing the document
-		std::cout << "Filename: " << filename << endl;
-		std::cout << "Page From: " << page_from << endl;
-		std::cout << "Page To: " << page_to << endl;
-		std::cout << "Test Run: " << (test_run ? "true" : "false") << endl;
-		std::cout << "Links Only: " << (links_only ? "true" : "false") << endl;
-
-		// Process the document
-		// Placeholder for document processing logic
-		
-		return EXIT_SUCCESS;
-	}
-	catch (exception& ex) {
-		cerr << "An exception occurred: " << ex.what() << endl;
-		return EXIT_FAILURE;
-	}
+    return process_document(page_from, page_to, doc);
+  }
+  catch (const DJVU::GException &e) {
+    e.perror();
+    return EXIT_FAILURE;
+  }
+  catch (const std::exception &e) {
+    std::cerr << e.what() << std::endl;
+    return EXIT_FAILURE;
+  }
 }
-
-
-
