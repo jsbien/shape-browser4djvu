@@ -1,4 +1,3 @@
-s
 /***
  * 
  * Exportshapes is a program that extracts shape dictionary data 
