@@ -89,7 +89,7 @@ init_inherited_dictionaries(GP<DjVuDocument> doc)
 
   int page_count = doc->get_pages_num();
 
-  for (int p = 1; p <= page_count; ++p)
+  for (int p = 0; p <= page_count; ++p)
   {
     GP<DjVuImage> img = doc->get_page(p);
     if (!img)
