@@ -91,6 +91,8 @@ init_inherited_dictionaries(GP<DjVuDocument> doc)
 
   for (int p = 0; p <= page_count; ++p)
   {
+    std::cerr << "DEBUG: get_page(" << p << ")\n";
+
     GP<DjVuImage> img = doc->get_page(p);
     if (!img)
       continue;
