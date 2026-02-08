@@ -241,7 +241,16 @@ int main(int argc, char **argv)
     init_inherited_dictionaries(doc);
 
 
-    return process_document(page_from, page_to, doc);
+    int n = doc->get_pages_num();
+
+    int from = page_from - 1;
+    int to   = (page_to < 0) ? n - 1 : page_to - 1;
+
+    if (from < 0 || to < from || to >= n)
+      throw std::runtime_error("invalid page range");
+
+    return process_document(from, to, doc);
+
   }
   catch (const DJVU::GException &e) {
     e.perror();
