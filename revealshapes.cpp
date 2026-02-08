@@ -26,8 +26,8 @@
 #include <sstream>
 #include <map>
 #include <vector>
-#include <bits/getopt_core.h>
-#include <bits/getopt_core.h>
+#include <getopt.h>
+
 
 #include "DjVuDocument.h"
 #include "DjVuImage.h"
