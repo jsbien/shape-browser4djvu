@@ -167,11 +167,13 @@ process_document(int page_from, int page_to, GP<DjVuDocument> doc)
 
     for (int b = 0; b < blit_count; ++b)
     {
-      const JB2Blit &blit = jimg->get_blit(b);
+     const JB2Blit *blit = jimg->get_blit(b);
+     if (!blit)
+       continue;
 
-      int shape_no = blit.shapeno();
-      int left     = blit.left();
-      int bottom   = blit.bottom();
+     int shape_no = blit->shapeno;
+     int left     = blit->left;
+     int bottom   = blit->bottom;
 
       // collect blit info here
     }
