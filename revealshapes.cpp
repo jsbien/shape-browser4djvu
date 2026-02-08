@@ -145,9 +145,9 @@ process_document(int page_from, int page_to, GP<DjVuDocument> doc)
       continue;
 
     // -------------------------------
-    // 1. EXPORT SHAPES (if requested)
+    // 1. EXPORT SHAPES 
     // -------------------------------
-    if (export_shapes)
+
     {
       int shape_count = jimg->get_shape_count();
 
