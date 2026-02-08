@@ -31,7 +31,7 @@
 
 #include "DjVuDocument.h"
 #include "DjVuImage.h"
-#include "/usr/include/libdjvu/ddjvuapi.h"
+#include "ddjvuapi.h"
 #include "DjVmDir.h"
 #include "JB2Image.h"
 #include "Arrays.h"
