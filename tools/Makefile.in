@@ -62,17 +62,13 @@ CFLAGS = ${FLAGS} @CPPFLAGS@ @CFLAGS@
 CXXFLAGS = ${FLAGS} ${CXXRPOFLAGS} ${MYSQLFLAGS} @CPPFLAGS@ @CXXFLAGS@ 
 SUBDIRS = jb2cmp
 
-PROGRAMS = bzz c44 cjb2 cpaldjvu csepdjvu \
-	   ddjvu djvm djvmcvt djvudump \
-	   djvups djvuextract djvumake \
-	   djvused djvutxt djvuserve \
-	   inhdict
+PROGRAMS = 
 
 SCRIPTS = djvudigital any2djvu
 
 MAN1PAGES = djvu
 
-all: ${PROGRAMS}
+all: exportshapes
 
 install: install-bin install-scripts install-man
 
