@@ -1,3 +1,4 @@
+import argparse
 import tkinter as tk
 
 from repository import ShapeRepository
@@ -6,56 +7,53 @@ from renderer import ShapeRenderer
 from gui import ShapeBrowserGUI
 
 
-def choose_document(repo):
-    documents = repo.fetch_documents()
+VERSION = "shape-browser-basic"
 
-    if not documents:
-        print("No documents found.")
-        return None
 
-    print("Available documents:")
-    for doc in documents:
-        print(f"{doc['id']}: {doc['document']}")
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description="Shape Browser — browse canonical glyph shapes"
+    )
 
-    while True:
-        try:
-            selected = int(input("Enter document ID to load: "))
-            for doc in documents:
-                if doc["id"] == selected:
-                    return selected
-            print("Invalid ID. Try again.")
-        except ValueError:
-            print("Please enter a numeric ID.")
+    parser.add_argument("--host", required=True, help="MariaDB host")
+    parser.add_argument("--user", required=True, help="MariaDB user")
+    parser.add_argument("--password", required=True, help="MariaDB password")
+    parser.add_argument("--database", required=True, help="Database name")
+    parser.add_argument("--document", required=True, type=int,
+                        help="Document ID to load")
+    parser.add_argument("--tile-size", type=int, default=140,
+                        help="Grid tile size in pixels (default: 140)")
+
+    return parser.parse_args()
 
 
 def main():
-    print("=== Shape Browser ===")
+    args = parse_arguments()
 
-    host = input("DB host [localhost]: ") or "localhost"
-    user = input("DB user: ")
-    password = input("DB password: ")
-    database = input("DB name: ")
+    repo = ShapeRepository(
+        host=args.host,
+        user=args.user,
+        password=args.password,
+        database=args.database,
+    )
 
-    repo = ShapeRepository(host, user, password, database)
+    shape_rows = repo.fetch_shapes(args.document)
+    blit_rows = repo.fetch_blits(args.document)
 
-    document_id = choose_document(repo)
-    if document_id is None:
-        return
-
-    print("Loading shapes...")
-    shape_rows = repo.fetch_shapes(document_id)
-
-    print("Loading blits...")
-    blit_rows = repo.fetch_blits(document_id)
-
-    print("Building model...")
     model = ShapeModel(shape_rows, blit_rows)
-
     renderer = ShapeRenderer()
 
-    print("Launching GUI...")
     root = tk.Tk()
-    app = ShapeBrowserGUI(root, model, renderer)
+
+    app = ShapeBrowserGUI(
+        root=root,
+        model=model,
+        renderer=renderer,
+        tile_size=args.tile_size,
+        database_name=args.database,
+        version=VERSION,
+    )
+
     root.mainloop()
 
     repo.close()

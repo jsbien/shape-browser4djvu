@@ -3,15 +3,26 @@ from tkinter import ttk
 
 
 class ShapeBrowserGUI:
-    def __init__(self, root, model, renderer):
+    def __init__(
+        self,
+        root,
+        model,
+        renderer,
+        tile_size,
+        database_name,
+        version,
+    ):
         self.root = root
         self.model = model
         self.renderer = renderer
+        self.tile_size = tile_size
+        self.database_name = database_name
+        self.version = version
 
         self.root.title("Shape Browser")
 
         self._build_layout()
-        self._populate_tree()
+        self._populate_tree()   # (temporary until we replace with grid)
 
     # -------------------------
     # Layout
