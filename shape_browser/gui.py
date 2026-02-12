@@ -21,6 +21,7 @@ class ShapeBrowserGUI:
 
         self.shapes = self.model.root_shapes
         self.columns = 6
+        self.panel_visible = True
 
         self.root.title("Shape Browser")
 
@@ -34,6 +35,14 @@ class ShapeBrowserGUI:
     def _build_layout(self):
         self.main_frame = ttk.Frame(self.root)
         self.main_frame.pack(fill="both", expand=True)
+
+        # Toggle button
+        self.toggle_button = ttk.Button(
+            self.main_frame,
+            text="Hide panel",
+            command=self._toggle_panel,
+        )
+        self.toggle_button.pack(side="top", anchor="ne", padx=5, pady=5)
 
         # Canvas
         self.canvas = tk.Canvas(self.main_frame)
@@ -83,6 +92,7 @@ class ShapeBrowserGUI:
             tk_image = self.renderer.get_tk_image(shape, tile)
 
             item = self.canvas.create_image(x, y, image=tk_image)
+
             self.canvas.tag_bind(
                 item,
                 "<Button-1>",
@@ -95,6 +105,20 @@ class ShapeBrowserGUI:
         self.canvas.configure(
             scrollregion=(0, 0, columns * tile, total_height)
         )
+
+    # -------------------------------------------------
+    # Panel Toggle
+    # -------------------------------------------------
+
+    def _toggle_panel(self):
+        if self.panel_visible:
+            self.side_panel.pack_forget()
+            self.toggle_button.config(text="Show panel")
+            self.panel_visible = False
+        else:
+            self.side_panel.pack(side="right", fill="y")
+            self.toggle_button.config(text="Hide panel")
+            self.panel_visible = True
 
     # -------------------------------------------------
     # Selection
