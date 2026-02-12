@@ -128,6 +128,7 @@ class ShapeBrowserGUI:
         self.current_index = self.index_by_shape_id[shape.id]
         self._highlight_shape(shape)
         self._update_side_panel(shape)
+        self._ensure_visible(shape)
 
     def _highlight_shape(self, shape):
         tile = self.tile_size
@@ -150,6 +151,39 @@ class ShapeBrowserGUI:
             outline="red",
             width=2,
         )
+
+    def _ensure_visible(self, shape):
+        tile = self.tile_size
+
+        row, col = self.shape_positions[shape.id]
+
+        top = row * tile
+        bottom = top + tile
+
+        canvas_top = self.canvas.canvasy(0)
+        canvas_bottom = canvas_top + self.canvas.winfo_height()
+
+        scroll_region = self.canvas.bbox("all")
+        if not scroll_region:
+            return
+
+        total_height = scroll_region[3]
+
+        # Scroll up if above visible area
+        if top < canvas_top:
+            self.canvas.yview_moveto(top / total_height)
+
+        # Scroll down if below visible area
+        elif bottom > canvas_bottom:
+            new_top = bottom - self.canvas.winfo_height()
+            self.canvas.yview_moveto(new_top / total_height)
+
+    def _select_by_index(self, index):
+        shape = self.shapes[index]
+        self.current_index = index
+        self._highlight_shape(shape)
+        self._update_side_panel(shape)
+        self._ensure_visible(shape)
 
     # -------------------------------------------------
     # Arrow Key Navigation
@@ -192,12 +226,6 @@ class ShapeBrowserGUI:
         target = self.current_index + self.columns
         if target < len(self.shapes):
             self._select_by_index(target)
-
-    def _select_by_index(self, index):
-        shape = self.shapes[index]
-        self.current_index = index
-        self._highlight_shape(shape)
-        self._update_side_panel(shape)
 
     # -------------------------------------------------
     # Scroll Navigation
