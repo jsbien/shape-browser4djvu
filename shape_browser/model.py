@@ -1,112 +1,88 @@
-from collections import defaultdict
+class Shape:
+    def __init__(self, shape_row):
+        self.id = shape_row["id"]
+        self.parent_id = shape_row["parent_id"]
+        self.width = shape_row["width"]
+        self.height = shape_row["height"]
+        self.depth = shape_row.get("depth", 0)
+
+        # Direct occurrence count (will be filled later)
+        self.usage_count = 0
+
+        # Subtree occurrence count (computed later)
+        self.subtree_count = 0
+
+        # Tree structure
+        self.children = []
+
+        # Occurrence list
+        self.occurrences = []
 
 
 class Occurrence:
-    """
-    Represents one placement of a shape on a page.
-    """
-
-    def __init__(self, page_number, x, y):
-        self.page_number = page_number
-        self.x = x
-        self.y = y
-
-    def __repr__(self):
-        return f"<Occurrence page={self.page_number} x={self.x} y={self.y}>"
-
-
-
-class Shape:
-    """
-    Represents a canonical glyph shape.
-    """
-
-    def __init__(self, shape_id, parent_id, width, height, bits):
-        self.id = shape_id
-        self.parent_id = parent_id
-        self.width = width
-        self.height = height
-        self.bits = bits
-
-        self.children = []
-        self.occurrences = []
-
-    def add_child(self, child):
-        self.children.append(child)
-
-    def add_occurrence(self, occurrence):
-        self.occurrences.append(occurrence)
-
-    @property
-    def usage_count(self):
-        return len(self.occurrences)
-
-    def __repr__(self):
-        return f"<Shape id={self.id} parent={self.parent_id} children={len(self.children)} occurrences={len(self.occurrences)}>"
+    def __init__(self, blit_row):
+        self.shape_id = blit_row["shape_id"]
+        self.page_number = blit_row["page"]
 
 
 class ShapeModel:
-    """
-    Builds in-memory structure of shapes and their relationships.
-    """
-
-    def __init__(self, shape_rows, blit_rows):
-        self.shapes = {}          # shape_id -> Shape
-        self.root_shapes = []     # shapes without parent
-
-        self._build_shapes(shape_rows)
-        self._build_hierarchy()
-        self._attach_occurrences(blit_rows)
-
-    # -------------------------
-    # Internal Build Steps
-    # -------------------------
-
-    def _build_shapes(self, shape_rows):
-        for row in shape_rows:
-            shape = Shape(
-                shape_id=row["id"],
-                parent_id=row["parent_id"],
-                width=row["width"],
-                height=row["height"],
-                bits=row["bits"],
-            )
+    def __init__(self, shapes_rows, blits_rows):
+        # Build Shape objects
+        self.shapes = {}
+        for row in shapes_rows:
+            shape = Shape(row)
             self.shapes[shape.id] = shape
 
-    def _build_hierarchy(self):
-    # First initialize depth to 0 for all
-          for shape in self.shapes.values():
-            shape.depth = 0
+        # Attach occurrences and compute direct usage_count
+        for row in blits_rows:
+            occ = Occurrence(row)
+            shape = self.shapes.get(occ.shape_id)
+            if shape:
+                shape.occurrences.append(occ)
+                shape.usage_count += 1
 
-    # Assign children and compute depth
-          for shape in self.shapes.values():
-              if shape.parent_id and shape.parent_id in self.shapes:
-                  parent = self.shapes[shape.parent_id]
-                  shape.depth = parent.depth + 1
-                  parent.add_child(shape)
-              else:
-                  self.root_shapes.append(shape)
+        # Build hierarchy
+        self.root_shapes = []
+        self._build_tree()
 
-    # Sort roots by height descending
-          self.root_shapes.sort(key=lambda s: s.height, reverse=True)
+        # Compute subtree counts
+        self._compute_subtree_counts()
 
-    def _attach_occurrences(self, blit_rows):
-        for row in blit_rows:
-            shape_id = row["shape_id"]
-            if shape_id in self.shapes:
-                occurrence = Occurrence(
-                    page_number=row["page_number"],
-                    x=row["b_left"],
-                    y=row["b_bottom"],
-                )
-                self.shapes[shape_id].add_occurrence(occurrence)
+    # -------------------------------------------------
+    # Tree construction
+    # -------------------------------------------------
 
-    # -------------------------
-    # Public API
-    # -------------------------
+    def _build_tree(self):
+        for shape in self.shapes.values():
+            if shape.parent_id and shape.parent_id in self.shapes:
+                parent = self.shapes[shape.parent_id]
+                parent.children.append(shape)
+            else:
+                self.root_shapes.append(shape)
 
-    def get_shape(self, shape_id):
-        return self.shapes.get(shape_id)
+    # -------------------------------------------------
+    # Subtree occurrence computation
+    # -------------------------------------------------
 
-    def all_shapes(self):
+    def _compute_subtree_counts(self):
+        for root in self.root_shapes:
+            self._compute_subtree(root)
+
+    def _compute_subtree(self, shape):
+        total = shape.usage_count
+
+        for child in shape.children:
+            total += self._compute_subtree(child)
+
+        shape.subtree_count = total
+        return total
+
+    # -------------------------------------------------
+    # Access helpers
+    # -------------------------------------------------
+
+    def get_all_shapes(self):
         return list(self.shapes.values())
+
+    def get_root_shapes(self):
+        return self.root_shapes
