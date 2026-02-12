@@ -24,7 +24,11 @@ class ShapeBrowserGUI:
         self.version = version
         self.build_timestamp = build_timestamp
 
-        self.all_shapes = self.model.root_shapes
+        self.all_shapes = sorted(
+            self.model.root_shapes,
+            key=lambda s: s.height,
+            reverse=True,
+        )
         self.filtered_shapes = self.all_shapes
 
         self.columns = 6
@@ -204,6 +208,8 @@ class ShapeBrowserGUI:
     # -------------------------------------------------
 
     def _draw_all_shapes(self):
+        self._image_refs = []
+
         self.canvas.delete("all")
 
         tile = self.tile_size
@@ -223,7 +229,7 @@ class ShapeBrowserGUI:
             y = row * tile + tile // 2
 
             tk_image = self.renderer.get_tk_image(shape, tile)
-
+            self._image_refs.append(tk_image)
             item = self.canvas.create_image(x, y, image=tk_image)
 
             self.canvas.tag_bind(
