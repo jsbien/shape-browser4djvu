@@ -21,6 +21,12 @@ class ShapeBrowserGUI:
 
         self.shapes = self.model.root_shapes
         self.columns = 6
+
+        # Selection state
+        self.shape_positions = {}
+        self.current_highlight = None
+
+        # Panel state
         self.panel_visible = True
 
         self.root.title("Shape Browser")
@@ -86,6 +92,9 @@ class ShapeBrowserGUI:
             row = index // columns
             col = index % columns
 
+            # Store position for highlight
+            self.shape_positions[shape.id] = (row, col)
+
             x = col * tile + tile // 2
             y = row * tile + tile // 2
 
@@ -107,6 +116,38 @@ class ShapeBrowserGUI:
         )
 
     # -------------------------------------------------
+    # Selection Highlight
+    # -------------------------------------------------
+
+    def _on_select(self, shape):
+        self._highlight_shape(shape)
+        self._update_side_panel(shape)
+
+    def _highlight_shape(self, shape):
+        tile = self.tile_size
+
+        # Remove previous highlight
+        if self.current_highlight is not None:
+            self.canvas.delete(self.current_highlight)
+            self.current_highlight = None
+
+        row, col = self.shape_positions[shape.id]
+
+        left = col * tile
+        top = row * tile
+        right = left + tile
+        bottom = top + tile
+
+        self.current_highlight = self.canvas.create_rectangle(
+            left,
+            top,
+            right,
+            bottom,
+            outline="red",
+            width=2,
+        )
+
+    # -------------------------------------------------
     # Panel Toggle
     # -------------------------------------------------
 
@@ -121,11 +162,8 @@ class ShapeBrowserGUI:
             self.panel_visible = True
 
     # -------------------------------------------------
-    # Selection
+    # Side Panel Update
     # -------------------------------------------------
-
-    def _on_select(self, shape):
-        self._update_side_panel(shape)
 
     def _update_side_panel(self, shape):
         metadata = (
