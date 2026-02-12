@@ -110,50 +110,7 @@ class ShapeBrowserGUI:
 
     def _populate_grid(self):
         self._show_page(self.current_page)
-        print("Populating grid...")
-        shapes = self.model.root_shapes
-        columns = 6  # fixed for now
 
-        for index, shape in enumerate(shapes):
-            if index % 50 == 0:
-                print(index)
-
-            row = index // columns
-            col = index % columns
-
-            tile = self._create_tile(shape)
-            tile.grid(row=row, column=col, padx=5, pady=5)
-
-    def _create_tile(self, shape):
-        frame = ttk.Frame(
-            self.grid_frame,
-            width=self.tile_size,
-            height=self.tile_size,
-        )
-        frame.grid_propagate(False)
-
-        pil_image = self.renderer.get_pil_image(shape)
-
-        # Scale if needed
-        max_size = self.tile_size - 10
-        w, h = pil_image.size
-
-        if w > max_size or h > max_size:
-            scale = min(max_size / w, max_size / h)
-            new_w = int(w * scale)
-            new_h = int(h * scale)
-            pil_image = pil_image.resize((new_w, new_h), Image.NEAREST)
-
-        tk_image = ImageTk.PhotoImage(pil_image)
-
-        label = ttk.Label(frame, image=tk_image)
-        label.image = tk_image
-        label.pack(expand=True)
-
-        label.bind("<Button-1>", lambda e, s=shape: self._on_select(s))
-
-        return frame
-    
     def _create_tile(self, shape):
         frame = ttk.Frame(
             self.grid_frame,
@@ -185,47 +142,47 @@ class ShapeBrowserGUI:
 
 
         def _show_page(self, page_index):
-            self._clear_grid()
+        self._clear_grid()
 
-            start = page_index * self.page_size
-            end = min(start + self.page_size, len(self.shapes))
+        start = page_index * self.page_size
+        end = min(start + self.page_size, len(self.shapes))
 
-            columns = 6
+        columns = 6
 
-            for index, shape in enumerate(self.shapes[start:end]):
-                row = index // columns
-                col = index % columns
+        for index, shape in enumerate(self.shapes[start:end]):
+            row = index // columns
+            col = index % columns
 
-                tile = self._create_tile(shape)
-                tile.grid(row=row, column=col, padx=5, pady=5)
+            tile = self._create_tile(shape)
+            tile.grid(row=row, column=col, padx=5, pady=5)
 
-            self.page_label.config(
-                text=f"Page {self.current_page + 1} / {self.total_pages}"
-            )
+        self.page_label.config(
+            text=f"Page {self.current_page + 1} / {self.total_pages}"
+        )
 
-            self.prev_button.config(
-                state="normal" if self.current_page > 0 else "disabled"
-            )
-            self.next_button.config(
-                state="normal" if self.current_page < self.total_pages - 1 else "disabled"
-            )
-
-
-        def _clear_grid(self):
-            for widget in self.grid_frame.winfo_children():
-                widget.destroy()
+        self.prev_button.config(
+            state="normal" if self.current_page > 0 else "disabled"
+        )
+        self.next_button.config(
+            state="normal" if self.current_page < self.total_pages - 1 else "disabled"
+        )
 
 
-        def _prev_page(self):
-            if self.current_page > 0:
-                self.current_page -= 1
-                self._show_page(self.current_page)
+    def _clear_grid(self):
+        for widget in self.grid_frame.winfo_children():
+            widget.destroy()
 
 
-        def _next_page(self):
-            if self.current_page < self.total_pages - 1:
-                self.current_page += 1
-                self._show_page(self.current_page)
+    def _prev_page(self):
+        if self.current_page > 0:
+            self.current_page -= 1
+            self._show_page(self.current_page)
+
+
+    def _next_page(self):
+        if self.current_page < self.total_pages - 1:
+            self.current_page += 1
+            self._show_page(self.current_page)
 
 
     # -------------------------------------------------
