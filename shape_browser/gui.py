@@ -314,6 +314,29 @@ class ShapeBrowserGUI:
 
             item = self.canvas.create_image(x, y, image=tk_image)
 
+            # Depth.Sibling badge
+            badge_text = f"{shape.depth}.{shape.sibling_index}"
+
+            text_id = self.canvas.create_text(
+                x - tile // 2 + 4,
+                y - tile // 2 + 4,
+                anchor="nw",
+                text=badge_text,
+                font=("TkDefaultFont", 8),
+                fill="black",
+            )
+
+            # Add background rectangle behind badge
+            bbox = self.canvas.bbox(text_id)
+            rect_id = self.canvas.create_rectangle(
+                bbox,
+                fill="white",
+                outline=""
+            )
+
+            # Ensure text stays above rectangle
+            self.canvas.tag_raise(text_id, rect_id)
+
             self.canvas.tag_bind(
                 item,
                 "<Button-1>",
