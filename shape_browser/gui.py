@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+import subprocess
 
 
 PROGRAM_NAME = "Shape Browser"
@@ -38,8 +39,11 @@ class ShapeBrowserGUI:
         self.current_index = None
         self.current_highlight = None
 
-        # Subtree mode (single level)
+        # Subtree mode (single level only)
         self.current_subtree_root = None
+
+        # Occurrence panel state
+        self.occurrences_visible = False
 
         self.root.title(f"{PROGRAM_NAME} {self.version}")
 
@@ -85,7 +89,7 @@ class ShapeBrowserGUI:
         self.main_frame = ttk.Frame(self.root)
         self.main_frame.pack(fill="both", expand=True)
 
-        # Top info bar
+        # Info bar
         self.info_frame = ttk.Frame(self.main_frame)
         self.info_frame.pack(side="top", fill="x")
 
@@ -98,11 +102,10 @@ class ShapeBrowserGUI:
             command=self._exit_subtree_mode,
         )
 
-        # Full filter row (restored)
+        # Filter row
         self.filter_frame = ttk.Frame(self.main_frame)
         self.filter_frame.pack(side="top", fill="x", pady=4)
 
-        # Direct range
         ttk.Label(self.filter_frame, text="Direct:").pack(side="left")
         self.direct_min = ttk.Entry(self.filter_frame, width=4)
         self.direct_min.pack(side="left")
@@ -110,7 +113,6 @@ class ShapeBrowserGUI:
         self.direct_max = ttk.Entry(self.filter_frame, width=4)
         self.direct_max.pack(side="left")
 
-        # Subtree range
         ttk.Label(self.filter_frame, text=" Subtree:").pack(side="left")
         self.subtree_min = ttk.Entry(self.filter_frame, width=4)
         self.subtree_min.pack(side="left")
@@ -118,7 +120,6 @@ class ShapeBrowserGUI:
         self.subtree_max = ttk.Entry(self.filter_frame, width=4)
         self.subtree_max.pack(side="left")
 
-        # Height range
         ttk.Label(self.filter_frame, text=" Height:").pack(side="left")
         self.height_min = ttk.Entry(self.filter_frame, width=4)
         self.height_min.pack(side="left")
@@ -126,7 +127,6 @@ class ShapeBrowserGUI:
         self.height_max = ttk.Entry(self.filter_frame, width=4)
         self.height_max.pack(side="left")
 
-        # Ratio range
         ttk.Label(self.filter_frame, text=" Ratio (H/W):").pack(side="left")
         self.ratio_min = ttk.Entry(self.filter_frame, width=4)
         self.ratio_min.pack(side="left")
@@ -134,24 +134,21 @@ class ShapeBrowserGUI:
         self.ratio_max = ttk.Entry(self.filter_frame, width=4)
         self.ratio_max.pack(side="left")
 
-        # Max depth
         ttk.Label(self.filter_frame, text=" Max depth:").pack(side="left")
         self.depth_max_entry = ttk.Entry(self.filter_frame, width=4)
         self.depth_max_entry.pack(side="left")
 
-        self.apply_button = ttk.Button(
+        ttk.Button(
             self.filter_frame,
             text="Apply",
             command=self._apply_filters,
-        )
-        self.apply_button.pack(side="left", padx=5)
+        ).pack(side="left", padx=5)
 
-        self.clear_button = ttk.Button(
+        ttk.Button(
             self.filter_frame,
             text="Clear",
             command=self._clear_filters,
-        )
-        self.clear_button.pack(side="left")
+        ).pack(side="left")
 
         # Canvas
         self.canvas = tk.Canvas(self.main_frame)
@@ -166,15 +163,8 @@ class ShapeBrowserGUI:
         self.canvas.pack(side="left", fill="both", expand=True)
 
         # Side panel
-        self.side_panel = ttk.Frame(self.root, width=300)
+        self.side_panel = ttk.Frame(self.root, width=320)
         self.side_panel.pack(side="right", fill="y")
-
-        self.metadata_label = ttk.Label(
-            self.side_panel,
-            text="Select a shape",
-            justify="left",
-        )
-        self.metadata_label.pack(anchor="nw", padx=10, pady=10)
 
     # -------------------------------------------------
     # Subtree logic
@@ -211,7 +201,7 @@ class ShapeBrowserGUI:
         self._apply_filters()
 
     # -------------------------------------------------
-    # Filters (original logic preserved)
+    # Filters
     # -------------------------------------------------
 
     def _apply_filters(self):
@@ -349,7 +339,102 @@ class ShapeBrowserGUI:
         self._update_side_panel(shape)
 
     # -------------------------------------------------
-    # Highlight & panel
+    # Side panel with occurrences
+    # -------------------------------------------------
+
+    def _update_side_panel(self, shape):
+        for widget in self.side_panel.winfo_children():
+            widget.destroy()
+
+        ratio = shape.height / shape.width if shape.width else 0
+
+        metadata = (
+            f"Shape ID: {shape.id}\n"
+            f"Parent ID: {shape.parent_id}\n"
+            f"Size: {shape.width} x {shape.height}\n"
+            f"Ratio: {ratio:.3f}\n"
+            f"Depth: {shape.depth}\n"
+            f"Sibling index: {shape.sibling_index}\n"
+            f"Usage: {shape.usage_count}\n"
+            f"Subtree usage: {shape.subtree_count}\n"
+            f"Children: {len(shape.children)}\n"
+        )
+
+        ttk.Label(
+            self.side_panel,
+            text=metadata,
+            justify="left",
+        ).pack(anchor="nw", padx=10, pady=5)
+
+        occurrences = shape.occurrences
+
+        if not occurrences:
+            ttk.Label(
+                self.side_panel,
+                text="No occurrences",
+            ).pack(anchor="nw", padx=10, pady=5)
+            return
+
+        page_counts = {}
+        for occ in occurrences:
+            page_counts.setdefault(occ.page_number, []).append(occ)
+
+        total_occ = len(occurrences)
+        total_pages = len(page_counts)
+
+        header_frame = ttk.Frame(self.side_panel)
+        header_frame.pack(anchor="nw", fill="x", padx=10, pady=5)
+
+        ttk.Label(
+            header_frame,
+            text=f"Occurrences: {total_occ} ({total_pages} pages)",
+        ).pack(side="left")
+
+        ttk.Button(
+            header_frame,
+            text="Hide" if self.occurrences_visible else "Show",
+            width=6,
+            command=lambda s=shape: self._toggle_occurrences(s),
+        ).pack(side="right")
+
+        if not self.occurrences_visible:
+            return
+
+        ttk.Label(
+            self.side_panel,
+            text=f"Document: {self.database_name}",
+            font=("TkDefaultFont", 9, "bold"),
+        ).pack(anchor="nw", padx=10, pady=(5, 2))
+
+        for page in sorted(page_counts.keys()):
+            count = len(page_counts[page])
+
+            page_label = tk.Label(
+                self.side_panel,
+                text=f"Page {page} ({count})",
+                fg="blue",
+                cursor="hand2",
+            )
+            page_label.pack(anchor="nw", padx=20)
+
+            page_label.bind(
+                "<Button-1>",
+                lambda e, p=page: self._open_page(p),
+            )
+
+    def _toggle_occurrences(self, shape):
+        self.occurrences_visible = not self.occurrences_visible
+        self._update_side_panel(shape)
+
+    def _open_page(self, page_number):
+        subprocess.Popen([
+            "djview4",
+            f"--page={page_number + 1}",
+            self.database_name,  # TODO: replace with real document path
+        ])
+
+    # -------------------------------------------------
+    # Highlight
     # -------------------------------------------------
 
     def _highlight_shape(self, shape):
@@ -368,23 +453,6 @@ class ShapeBrowserGUI:
             outline="red",
             width=2,
         )
-
-    def _update_side_panel(self, shape):
-        ratio = shape.height / shape.width if shape.width else 0
-
-        metadata = (
-            f"Shape ID: {shape.id}\n"
-            f"Parent ID: {shape.parent_id}\n"
-            f"Size: {shape.width} x {shape.height}\n"
-            f"Ratio: {ratio:.3f}\n"
-            f"Depth: {shape.depth}\n"
-            f"Sibling index: {shape.sibling_index}\n"
-            f"Usage: {shape.usage_count}\n"
-            f"Subtree usage: {shape.subtree_count}\n"
-            f"Children: {len(shape.children)}\n"
-        )
-
-        self.metadata_label.config(text=metadata)
 
     # -------------------------------------------------
     # Keyboard navigation
