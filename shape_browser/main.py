@@ -8,6 +8,7 @@ from repository import ShapeRepository
 from model import ShapeModel
 from renderer import ShapeRenderer
 from gui import ShapeBrowserGUI
+from djview_launcher import DjViewLauncher
 
 
 VERSION = "0.6"
@@ -15,9 +16,7 @@ BUILD_TIMESTAMP = datetime.now().strftime("%Y-%m-%d-%H%M%S")
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Shape Browser"
-    )
+    parser = argparse.ArgumentParser(description="Shape Browser")
 
     parser.add_argument("--host", required=True)
     parser.add_argument("--user", required=True)
@@ -56,7 +55,7 @@ def main():
     renderer = ShapeRenderer()
 
     # ---------------------------------------------------
-    # Resolve document filename and absolute path
+    # Resolve document filename
     # ---------------------------------------------------
 
     documents = repo.fetch_documents()
@@ -71,7 +70,7 @@ def main():
         print("Document not found in database.")
         sys.exit(1)
 
-    # According to repository.py:
+    # repository.py uses:
     # SELECT id, document FROM documents
     document_filename = document_row["document"]
 
@@ -79,11 +78,19 @@ def main():
         os.path.join(args.djvu_root, document_filename)
     )
 
+    # Keep this — absolutely correct safeguard
     if not os.path.exists(document_path):
         print(f"DjVu file not found: {document_path}")
         sys.exit(1)
 
     print(f"Using DjVu file: {document_path}")
+
+    # ---------------------------------------------------
+    # Initialize DjView launcher
+    # ---------------------------------------------------
+
+    print("Initializing DjView launcher...")
+    djview_launcher = DjViewLauncher(document_path)
 
     # ---------------------------------------------------
 
@@ -98,7 +105,7 @@ def main():
         database_name=args.database,
         version=VERSION,
         build_timestamp=BUILD_TIMESTAMP,
-        document_path=document_path,
+        djview_launcher=djview_launcher,
     )
 
     root.mainloop()

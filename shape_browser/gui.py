@@ -1,6 +1,5 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
-import subprocess
 
 
 PROGRAM_NAME = "Shape Browser"
@@ -15,7 +14,7 @@ class ShapeBrowserGUI:
         database_name,
         version,
         build_timestamp,
-        document_path,
+        djview_launcher,
         tile_size=140,
     ):
         self.root = root
@@ -24,7 +23,7 @@ class ShapeBrowserGUI:
         self.database_name = database_name
         self.version = version
         self.build_timestamp = build_timestamp
-        self.document_path = document_path
+        self.djview = djview_launcher
         self.tile_size = tile_size
 
         self.all_shapes = sorted(
@@ -368,32 +367,12 @@ class ShapeBrowserGUI:
             page_label.bind(
                 "<Button-1>",
                 lambda e, p=page, occs=page_groups[page], s=shape:
-                self._open_page(p, occs, s),
+                self.djview.open_occurrences(p, s, occs),
             )
 
     def _toggle_occurrences(self, shape):
         self.occurrences_visible = not self.occurrences_visible
         self._update_side_panel(shape)
-
-    # -------------------------------------------------
-    # DjView integration
-    # -------------------------------------------------
-
-    def _open_page(self, page_number, occurrences, shape):
-        page = page_number + 1  # 1-based for djview
-
-        highlights = []
-        for occ in occurrences:
-            x = occ.x
-            y = occ.y
-            w = shape.width
-            h = shape.height
-            highlights.append(f"highlight={x},{y},{w},{h}")
-
-        query = f"djvuopts=&page={page}&" + "&".join(highlights)
-        url = f"file://{self.document_path}?{query}"
-
-        subprocess.Popen(["djview4", url])
 
     # -------------------------------------------------
     # Highlight
