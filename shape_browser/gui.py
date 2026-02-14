@@ -24,7 +24,6 @@ class ShapeBrowserGUI:
         self.version = version
         self.build_timestamp = build_timestamp
 
-        # Global view sorted by height (temporary default)
         self.all_shapes = sorted(
             self.model.shapes.values(),
             key=lambda s: s.height,
@@ -34,20 +33,19 @@ class ShapeBrowserGUI:
         self.filtered_shapes = self.all_shapes
 
         self.columns = 6
-
         self.shape_positions = {}
         self.index_by_shape_id = {}
         self.current_index = None
         self.current_highlight = None
 
-        # Subtree mode state (single-level only)
+        # Subtree mode (single level)
         self.current_subtree_root = None
 
         self.root.title(f"{PROGRAM_NAME} {self.version}")
 
+        self._build_menu()
         self._build_layout()
 
-        # Default startup filter (roots only)
         self.depth_max_entry.insert(0, "0")
         self._apply_filters()
 
@@ -57,6 +55,29 @@ class ShapeBrowserGUI:
         self.root.focus_set()
 
     # -------------------------------------------------
+    # Menu
+    # -------------------------------------------------
+
+    def _build_menu(self):
+        menu_bar = tk.Menu(self.root)
+
+        file_menu = tk.Menu(menu_bar, tearoff=0)
+        file_menu.add_command(label="Exit", command=self.root.quit)
+        menu_bar.add_cascade(label="File", menu=file_menu)
+
+        help_menu = tk.Menu(menu_bar, tearoff=0)
+        help_menu.add_command(label="About", command=self._show_about)
+        menu_bar.add_cascade(label="Help", menu=help_menu)
+
+        self.root.config(menu=menu_bar)
+
+    def _show_about(self):
+        messagebox.showinfo(
+            "About",
+            f"{PROGRAM_NAME}\nVersion: {self.version}\nBuild: {self.build_timestamp}",
+        )
+
+    # -------------------------------------------------
     # Layout
     # -------------------------------------------------
 
@@ -64,25 +85,57 @@ class ShapeBrowserGUI:
         self.main_frame = ttk.Frame(self.root)
         self.main_frame.pack(fill="both", expand=True)
 
-        # Info bar
+        # Top info bar
         self.info_frame = ttk.Frame(self.main_frame)
         self.info_frame.pack(side="top", fill="x")
 
         self.info_label = ttk.Label(self.info_frame, text="")
-        self.info_label.pack(side="left", padx=5, pady=5)
+        self.info_label.pack(side="left", padx=5)
 
-        # Back button (hidden initially)
         self.back_button = ttk.Button(
             self.info_frame,
             text="Back",
             command=self._exit_subtree_mode,
         )
 
-        # Filter bar (global mode only)
+        # Full filter row (restored)
         self.filter_frame = ttk.Frame(self.main_frame)
-        self.filter_frame.pack(side="top", fill="x")
+        self.filter_frame.pack(side="top", fill="x", pady=4)
 
-        ttk.Label(self.filter_frame, text="Max depth:").pack(side="left", padx=5)
+        # Direct range
+        ttk.Label(self.filter_frame, text="Direct:").pack(side="left")
+        self.direct_min = ttk.Entry(self.filter_frame, width=4)
+        self.direct_min.pack(side="left")
+        ttk.Label(self.filter_frame, text="-").pack(side="left")
+        self.direct_max = ttk.Entry(self.filter_frame, width=4)
+        self.direct_max.pack(side="left")
+
+        # Subtree range
+        ttk.Label(self.filter_frame, text=" Subtree:").pack(side="left")
+        self.subtree_min = ttk.Entry(self.filter_frame, width=4)
+        self.subtree_min.pack(side="left")
+        ttk.Label(self.filter_frame, text="-").pack(side="left")
+        self.subtree_max = ttk.Entry(self.filter_frame, width=4)
+        self.subtree_max.pack(side="left")
+
+        # Height range
+        ttk.Label(self.filter_frame, text=" Height:").pack(side="left")
+        self.height_min = ttk.Entry(self.filter_frame, width=4)
+        self.height_min.pack(side="left")
+        ttk.Label(self.filter_frame, text="-").pack(side="left")
+        self.height_max = ttk.Entry(self.filter_frame, width=4)
+        self.height_max.pack(side="left")
+
+        # Ratio range
+        ttk.Label(self.filter_frame, text=" Ratio (H/W):").pack(side="left")
+        self.ratio_min = ttk.Entry(self.filter_frame, width=4)
+        self.ratio_min.pack(side="left")
+        ttk.Label(self.filter_frame, text="-").pack(side="left")
+        self.ratio_max = ttk.Entry(self.filter_frame, width=4)
+        self.ratio_max.pack(side="left")
+
+        # Max depth
+        ttk.Label(self.filter_frame, text=" Max depth:").pack(side="left")
         self.depth_max_entry = ttk.Entry(self.filter_frame, width=4)
         self.depth_max_entry.pack(side="left")
 
@@ -98,9 +151,9 @@ class ShapeBrowserGUI:
             text="Clear",
             command=self._clear_filters,
         )
-        self.clear_button.pack(side="left", padx=5)
+        self.clear_button.pack(side="left")
 
-        # Canvas + scrollbar
+        # Canvas
         self.canvas = tk.Canvas(self.main_frame)
         self.scrollbar = ttk.Scrollbar(
             self.main_frame,
@@ -124,7 +177,7 @@ class ShapeBrowserGUI:
         self.metadata_label.pack(anchor="nw", padx=10, pady=10)
 
     # -------------------------------------------------
-    # Subtree collection (DFS structural order)
+    # Subtree logic
     # -------------------------------------------------
 
     def _collect_subtree_nodes(self, root_shape):
@@ -138,46 +191,32 @@ class ShapeBrowserGUI:
         dfs(root_shape)
         return result
 
-    # -------------------------------------------------
-    # Enter subtree mode (only from global)
-    # -------------------------------------------------
-
     def _enter_subtree_mode(self, root_shape):
         if self.current_subtree_root is not None:
-            return  # Already in subtree mode
+            return
 
         self.current_subtree_root = root_shape
-
         self.back_button.pack(side="right", padx=5)
 
-        self.info_label.config(text="Building subtree...")
-        self.root.update_idletasks()
-
         self.filtered_shapes = self._collect_subtree_nodes(root_shape)
-
         self.current_index = None
         self.current_highlight = None
 
         self._draw_all_shapes()
         self._update_info_bar()
 
-    # -------------------------------------------------
-    # Exit subtree mode → back to global
-    # -------------------------------------------------
-
     def _exit_subtree_mode(self):
         self.current_subtree_root = None
         self.back_button.pack_forget()
-
         self._apply_filters()
 
     # -------------------------------------------------
-    # Filtering (global mode only)
+    # Filters (original logic preserved)
     # -------------------------------------------------
 
     def _apply_filters(self):
         if self.current_subtree_root is not None:
-            return  # Ignore filters in subtree mode
+            return
 
         value = self.depth_max_entry.get().strip()
 
@@ -197,9 +236,6 @@ class ShapeBrowserGUI:
             filtered.append(shape)
 
         self.filtered_shapes = filtered
-        self.current_index = None
-        self.current_highlight = None
-
         self._draw_all_shapes()
         self._update_info_bar()
 
@@ -266,7 +302,8 @@ class ShapeBrowserGUI:
 
             item = self.canvas.create_image(x, y, image=tk_image)
 
-            badge_text = f"{shape.depth}.{shape.sibling_index}"
+            parent_text = shape.parent_id if shape.parent_id is not None else "-"
+            badge_text = f"{shape.depth}.{shape.sibling_index} (p:{parent_text})"
 
             text_id = self.canvas.create_text(
                 x - tile // 2 + 4,
@@ -312,7 +349,7 @@ class ShapeBrowserGUI:
         self._update_side_panel(shape)
 
     # -------------------------------------------------
-    # Highlight
+    # Highlight & panel
     # -------------------------------------------------
 
     def _highlight_shape(self, shape):
@@ -323,13 +360,11 @@ class ShapeBrowserGUI:
 
         row, col = self.shape_positions[shape.id]
 
-        left = col * tile
-        top = row * tile
-        right = left + tile
-        bottom = top + tile
-
         self.current_highlight = self.canvas.create_rectangle(
-            left, top, right, bottom,
+            col * tile,
+            row * tile,
+            col * tile + tile,
+            row * tile + tile,
             outline="red",
             width=2,
         )
@@ -339,6 +374,7 @@ class ShapeBrowserGUI:
 
         metadata = (
             f"Shape ID: {shape.id}\n"
+            f"Parent ID: {shape.parent_id}\n"
             f"Size: {shape.width} x {shape.height}\n"
             f"Ratio: {ratio:.3f}\n"
             f"Depth: {shape.depth}\n"
@@ -346,7 +382,6 @@ class ShapeBrowserGUI:
             f"Usage: {shape.usage_count}\n"
             f"Subtree usage: {shape.subtree_count}\n"
             f"Children: {len(shape.children)}\n"
-            f"Parent ID: {shape.parent_id}\n"
         )
 
         self.metadata_label.config(text=metadata)
