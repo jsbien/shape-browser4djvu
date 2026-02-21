@@ -364,11 +364,10 @@ class ShapeBrowserGUI:
             )
             page_label.pack(anchor="nw", padx=20)
 
-            page_label.bind(
-                "<Button-1>",
-                lambda e, p=page, occs=page_groups[page], s=shape:
-                self.djview.open_occurrences(p, s, occs),
-            )
+            def handler(_event, p=page, occs=page_groups[page], s=shape):
+                self.djview.open_occurrences(p, s, occs)
+
+            page_label.bind("<Button-1>", handler)
 
     def _toggle_occurrences(self, shape):
         self.occurrences_visible = not self.occurrences_visible
