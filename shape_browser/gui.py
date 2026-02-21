@@ -481,25 +481,45 @@ class ShapeBrowserGUI:
         if not self.occurrences_visible:
             return
 
+        # for page in sorted(page_groups.keys()):
+        #     count = len(page_groups[page])
+
+        #     page_label = tk.Label(
+        #         self.side_panel,
+        #         text=f"Page {page} ({count})",
+        #         fg="blue",
+        #         cursor="hand2",
+        #     )
+        #     page_label.pack(anchor="nw", padx=20)
+
+        #     self._bind_open_page(page_label, page, page_groups[page], shape)
+
         for page in sorted(page_groups.keys()):
-            count = len(page_groups[page])
+            occs = page_groups[page]
 
-            page_label = tk.Label(
+            # Page-level button: open all occurrences on that page
+            page_btn = ttk.Button(
                 self.side_panel,
-                text=f"Page {page} ({count})",
-                fg="blue",
-                cursor="hand2",
+                text=f"Page {page + 1} ({len(occs)})",
+                command=lambda p=page, s=shape, o=occs: self.djview.open_occurrences(p, s, o),
             )
-            page_label.pack(anchor="nw", padx=20)
+            page_btn.pack(anchor="nw", padx=20, pady=(2, 0))
 
-            self._bind_open_page(page_label, page, page_groups[page], shape)
+            # Per-occurrence list (always shown, even if only one)
+            for i, occ in enumerate(occs, 1):
+                occ_btn = ttk.Button(
+                    self.side_panel,
+                    text=f"  #{i}  x={occ.x} y={occ.y}",
+                    command=lambda p=page, s=shape, oc=occ: self.djview.open_single_occurrence(p, s, oc),
+                )
+                occ_btn.pack(anchor="nw", padx=35, pady=1)
+        
+    # def _bind_open_page(self, widget, page, occs, shape):
+    #     # Named handler for readability/debugging (no inline lambda logic)
+    #     def handler(_event):
+    #         self.djview.open_occurrences(page, shape, occs)
 
-    def _bind_open_page(self, widget, page, occs, shape):
-        # Named handler for readability/debugging (no inline lambda logic)
-        def handler(_event):
-            self.djview.open_occurrences(page, shape, occs)
-
-        widget.bind("<Button-1>", handler)
+    #     widget.bind("<Button-1>", handler)
 
     def _toggle_occurrences(self, shape):
         self.occurrences_visible = not self.occurrences_visible
