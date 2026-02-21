@@ -9,7 +9,7 @@ from model import ShapeModel
 from renderer import ShapeRenderer
 from gui import ShapeBrowserGUI
 from djview_launcher import DjViewLauncher
-
+from page_info_provider import PageInfoProvider
 
 VERSION = "0.6"
 BUILD_TIMESTAMP = datetime.now().strftime("%Y-%m-%d-%H%M%S")
@@ -84,14 +84,15 @@ def main():
         sys.exit(1)
 
     print(f"Using DjVu file: {document_path}")
+    page_info = PageInfoProvider(document_path)
+    print(f"DjVu page count: {page_info.get_page_count()}")
 
     # ---------------------------------------------------
     # Initialize DjView launcher
     # ---------------------------------------------------
 
     print("Initializing DjView launcher...")
-    djview_launcher = DjViewLauncher(document_path)
-
+    djview_launcher = DjViewLauncher(document_path, page_info)
     # ---------------------------------------------------
 
     print("Launching GUI...")

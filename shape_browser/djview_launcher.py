@@ -5,15 +5,30 @@ LOG_FILE = "shape_browser_djview.log"
 
 
 class DjViewLauncher:
-    def __init__(self, document_path):
+    """
+    Responsible for constructing djview4 URLs and launching djview4.
+    Also writes a structured debug log of each launch.
+
+    Assumptions:
+    - `page_info_provider` exists and works (djvudump availability checked elsewhere).
+    - Occurrence coordinates (occ.x/occ.y) are in the same coordinate system expected
+      by djview's highlight (if not, we'll adjust later using page height).
+    """
+
+    def __init__(self, document_path, page_info_provider):
         self.document_path = document_path
+        self.page_info = page_info_provider
         self._setup_logging()
+
+    # -------------------------------------------------
+    # Logging setup
+    # -------------------------------------------------
 
     def _setup_logging(self):
         self.logger = logging.getLogger("DjViewLauncher")
         self.logger.setLevel(logging.INFO)
 
-        # Avoid adding multiple handlers if GUI creates multiple instances
+        # Prevent duplicate handlers if multiple launcher instances are created
         if not self.logger.handlers:
             file_handler = logging.FileHandler(LOG_FILE, mode="a", encoding="utf-8")
             formatter = logging.Formatter("%(asctime)s\n%(message)s\n")
@@ -21,14 +36,19 @@ class DjViewLauncher:
             self.logger.addHandler(file_handler)
 
     # -------------------------------------------------
-    # Page mode: highlight all occurrences
+    # Page mode: highlight all occurrences on a page
     # -------------------------------------------------
 
     def open_occurrences(self, page_number, shape, occurrences):
         """
-        Open djview4 and highlight all occurrences of the shape on given page.
+        Open djview4 and highlight all occurrences of `shape` on a given page.
+
+        page_number is expected to be 0-based (DB convention).
         """
         page_1based = page_number + 1
+
+        # Page size info (from djvudump)
+        page_w, page_h = self.page_info.get_page_size(page_number)
 
         highlights = []
         for occ in occurrences:
@@ -47,6 +67,8 @@ class DjViewLauncher:
             page_1based=page_1based,
             occurrences=occurrences,
             highlights=highlights,
+            page_width=page_w,
+            page_height=page_h,
             url=url,
         )
 
@@ -63,10 +85,11 @@ class DjViewLauncher:
         page_1based,
         occurrences,
         highlights,
+        page_width,
+        page_height,
         url,
     ):
         lines = []
-
         lines.append("=" * 60)
         lines.append("DjView Launch Mode: PAGE")
         lines.append(f"Document: {self.document_path}")
@@ -80,6 +103,7 @@ class DjViewLauncher:
         lines.append(f"  Usage count: {shape.usage_count}")
         lines.append(f"  Subtree usage: {shape.subtree_count}")
         lines.append("")
+        lines.append(f"Page size: {page_width} x {page_height}")
         lines.append(f"DB page (0-based): {page_number}")
         lines.append(f"DjView page (1-based): {page_1based}")
         lines.append("")
@@ -103,4 +127,3 @@ class DjViewLauncher:
         lines.append("")
 
         self.logger.info("\n".join(lines))
-        
