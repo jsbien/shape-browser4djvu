@@ -22,8 +22,8 @@ class Occurrence:
     def __init__(self, blit_row):
         self.shape_id = blit_row["shape_id"]
         self.page_number = blit_row.get("page", blit_row.get("page_number"))
-        self.x = blit_row.get("x", 0)
-        self.y = blit_row.get("y", 0)
+        self.x = blit_row["b_left"]
+        self.y = blit_row["b_bottom"]
 
 
 class ShapeModel:
