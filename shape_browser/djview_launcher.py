@@ -54,12 +54,33 @@ class DjViewLauncher:
         highlight = f"highlight={x},{y},{w},{h}"
         showposition = f"showposition={px},{py}"
 
+        t = 0.50
+        min_zoom = 100
+        max_zoom = 999
+
+        rw = w / page_w if page_w else 1.0
+        rh = h / page_h if page_h else 1.0
+        r = max(rw, rh)
+
+        if r <= 0:
+            zoom_percent = min_zoom
+        else:
+            zoom_percent = int(round(100 * (t / r)))
+            zoom_percent = max(min_zoom, min(max_zoom, zoom_percent))
+
         query = (
             f"djvuopts=&page={page_1based}"
-            f"&zoom=width"
+            f"&zoom={zoom_percent}"
             f"&{highlight}"
             f"&{showposition}"
         )
+        
+        # query = (
+        #     f"djvuopts=&page={page_1based}"
+        #     f"&zoom=width"
+        #     f"&{highlight}"
+        #     f"&{showposition}"
+        # )
         url = f"file://{self.document_path}?{query}"
 
         subprocess.Popen(["djview4", url])
@@ -122,7 +143,7 @@ class DjViewLauncher:
             h = shape.height
             highlights.append(f"highlight={x},{y},{w},{h}")
 
-        query = f"djvuopts=&page={page_1based}&" + "&".join(highlights)
+        query = f"djvuopts=&page={page_1based}&zoom=page&" + "&".join(highlights)
         url = f"file://{self.document_path}?{query}"
 
         self._log_launch(
