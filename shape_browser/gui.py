@@ -1,7 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-
 PROGRAM_NAME = "Shape Browser"
 
 
@@ -26,20 +25,27 @@ class ShapeBrowserGUI:
         self.djview = djview_launcher
         self.tile_size = tile_size
 
+        # Display set (sorted for stable browsing)
         self.all_shapes = sorted(
             self.model.shapes.values(),
             key=lambda s: s.height,
             reverse=True,
         )
-
         self.filtered_shapes = self.all_shapes
 
+        # Grid layout
         self.columns = 6
-        self.shape_positions = {}
-        self.index_by_shape_id = {}
+        self.shape_positions = {}   # shape_id -> (row, col)
+        self.index_by_shape_id = {} # shape_id -> index in filtered_shapes
+
+        # Selection / state
         self.current_index = None
         self.current_highlight = None
+
+        # Subtree mode
         self.current_subtree_root = None
+
+        # Occurrence panel state
         self.occurrences_visible = False
 
         self.root.title(f"{PROGRAM_NAME} {self.version}")
@@ -47,12 +53,12 @@ class ShapeBrowserGUI:
         self._build_menu()
         self._build_layout()
 
+        # Default: roots only (depth=0), as in your screenshot series
         self.depth_max_entry.insert(0, "0")
         self._apply_filters()
 
         self._bind_keys()
         self._update_info_bar()
-
         self.root.focus_set()
 
     # -------------------------------------------------
@@ -86,6 +92,7 @@ class ShapeBrowserGUI:
         self.main_frame = ttk.Frame(self.root)
         self.main_frame.pack(fill="both", expand=True)
 
+        # Info bar
         self.info_frame = ttk.Frame(self.main_frame)
         self.info_frame.pack(side="top", fill="x")
 
@@ -98,10 +105,44 @@ class ShapeBrowserGUI:
             command=self._exit_subtree_mode,
         )
 
+        # Filter row (full)
         self.filter_frame = ttk.Frame(self.main_frame)
         self.filter_frame.pack(side="top", fill="x", pady=4)
 
-        ttk.Label(self.filter_frame, text="Max depth:").pack(side="left")
+        # Direct usage
+        ttk.Label(self.filter_frame, text="Direct:").pack(side="left")
+        self.direct_min = ttk.Entry(self.filter_frame, width=4)
+        self.direct_min.pack(side="left")
+        ttk.Label(self.filter_frame, text="-").pack(side="left")
+        self.direct_max = ttk.Entry(self.filter_frame, width=4)
+        self.direct_max.pack(side="left")
+
+        # Subtree usage
+        ttk.Label(self.filter_frame, text="  Subtree:").pack(side="left")
+        self.subtree_min = ttk.Entry(self.filter_frame, width=4)
+        self.subtree_min.pack(side="left")
+        ttk.Label(self.filter_frame, text="-").pack(side="left")
+        self.subtree_max = ttk.Entry(self.filter_frame, width=4)
+        self.subtree_max.pack(side="left")
+
+        # Height
+        ttk.Label(self.filter_frame, text="  Height:").pack(side="left")
+        self.height_min = ttk.Entry(self.filter_frame, width=4)
+        self.height_min.pack(side="left")
+        ttk.Label(self.filter_frame, text="-").pack(side="left")
+        self.height_max = ttk.Entry(self.filter_frame, width=4)
+        self.height_max.pack(side="left")
+
+        # Ratio (H/W)
+        ttk.Label(self.filter_frame, text="  Ratio (H/W):").pack(side="left")
+        self.ratio_min = ttk.Entry(self.filter_frame, width=4)
+        self.ratio_min.pack(side="left")
+        ttk.Label(self.filter_frame, text="-").pack(side="left")
+        self.ratio_max = ttk.Entry(self.filter_frame, width=4)
+        self.ratio_max.pack(side="left")
+
+        # Max depth
+        ttk.Label(self.filter_frame, text="  Max depth:").pack(side="left")
         self.depth_max_entry = ttk.Entry(self.filter_frame, width=4)
         self.depth_max_entry.pack(side="left")
 
@@ -117,6 +158,7 @@ class ShapeBrowserGUI:
             command=self._clear_filters,
         ).pack(side="left")
 
+        # Canvas
         self.canvas = tk.Canvas(self.main_frame)
         self.scrollbar = ttk.Scrollbar(
             self.main_frame,
@@ -128,8 +170,55 @@ class ShapeBrowserGUI:
         self.scrollbar.pack(side="right", fill="y")
         self.canvas.pack(side="left", fill="both", expand=True)
 
+        # Side panel
         self.side_panel = ttk.Frame(self.root, width=320)
         self.side_panel.pack(side="right", fill="y")
+
+    # -------------------------------------------------
+    # Helpers: range parsing
+    # -------------------------------------------------
+
+    def _parse_int_range(self, entry_min, entry_max):
+        a = entry_min.get().strip()
+        b = entry_max.get().strip()
+
+        min_v = None
+        max_v = None
+
+        if a:
+            try:
+                min_v = int(a)
+            except ValueError:
+                min_v = None
+
+        if b:
+            try:
+                max_v = int(b)
+            except ValueError:
+                max_v = None
+
+        return min_v, max_v
+
+    def _parse_float_range(self, entry_min, entry_max):
+        a = entry_min.get().strip()
+        b = entry_max.get().strip()
+
+        min_v = None
+        max_v = None
+
+        if a:
+            try:
+                min_v = float(a)
+            except ValueError:
+                min_v = None
+
+        if b:
+            try:
+                max_v = float(b)
+            except ValueError:
+                max_v = None
+
+        return min_v, max_v
 
     # -------------------------------------------------
     # Subtree logic
@@ -173,21 +262,51 @@ class ShapeBrowserGUI:
         if self.current_subtree_root is not None:
             return
 
-        value = self.depth_max_entry.get().strip()
+        direct_min, direct_max = self._parse_int_range(self.direct_min, self.direct_max)
+        subtree_min, subtree_max = self._parse_int_range(self.subtree_min, self.subtree_max)
+        height_min, height_max = self._parse_int_range(self.height_min, self.height_max)
+        ratio_min, ratio_max = self._parse_float_range(self.ratio_min, self.ratio_max)
 
-        if value:
+        depth_s = self.depth_max_entry.get().strip()
+        if depth_s:
             try:
-                depth_max = int(value)
+                depth_max = int(depth_s)
             except ValueError:
                 depth_max = None
         else:
             depth_max = None
 
         filtered = []
-
         for shape in self.all_shapes:
+            # Depth
             if depth_max is not None and shape.depth > depth_max:
                 continue
+
+            # Direct usage
+            if direct_min is not None and shape.usage_count < direct_min:
+                continue
+            if direct_max is not None and shape.usage_count > direct_max:
+                continue
+
+            # Subtree usage
+            if subtree_min is not None and shape.subtree_count < subtree_min:
+                continue
+            if subtree_max is not None and shape.subtree_count > subtree_max:
+                continue
+
+            # Height
+            if height_min is not None and shape.height < height_min:
+                continue
+            if height_max is not None and shape.height > height_max:
+                continue
+
+            # Ratio (H/W)
+            ratio = (shape.height / shape.width) if shape.width else 0.0
+            if ratio_min is not None and ratio < ratio_min:
+                continue
+            if ratio_max is not None and ratio > ratio_max:
+                continue
+
             filtered.append(shape)
 
         self.filtered_shapes = filtered
@@ -198,7 +317,15 @@ class ShapeBrowserGUI:
         if self.current_subtree_root is not None:
             return
 
-        self.depth_max_entry.delete(0, tk.END)
+        for entry in (
+            self.direct_min, self.direct_max,
+            self.subtree_min, self.subtree_max,
+            self.height_min, self.height_max,
+            self.ratio_min, self.ratio_max,
+            self.depth_max_entry,
+        ):
+            entry.delete(0, tk.END)
+
         self.filtered_shapes = self.all_shapes
         self._draw_all_shapes()
         self._update_info_bar()
@@ -273,7 +400,7 @@ class ShapeBrowserGUI:
             rect_id = self.canvas.create_rectangle(
                 bbox,
                 fill="white",
-                outline=""
+                outline="",
             )
             self.canvas.tag_raise(text_id, rect_id)
 
@@ -293,13 +420,14 @@ class ShapeBrowserGUI:
     # -------------------------------------------------
 
     def _on_click(self, event, shape):
+        # Ctrl-click enters subtree mode
         if event.state & 0x0004:
             self._enter_subtree_mode(shape)
         else:
             self._select_shape(shape)
 
     def _select_shape(self, shape):
-        self.current_index = self.index_by_shape_id[shape.id]
+        self.current_index = self.index_by_shape_id.get(shape.id)
         self._highlight_shape(shape)
         self._update_side_panel(shape)
 
@@ -311,7 +439,7 @@ class ShapeBrowserGUI:
         for widget in self.side_panel.winfo_children():
             widget.destroy()
 
-        ratio = shape.height / shape.width if shape.width else 0
+        ratio = shape.height / shape.width if shape.width else 0.0
 
         ttk.Label(
             self.side_panel,
@@ -364,10 +492,14 @@ class ShapeBrowserGUI:
             )
             page_label.pack(anchor="nw", padx=20)
 
-            def handler(_event, p=page, occs=page_groups[page], s=shape):
-                self.djview.open_occurrences(p, s, occs)
+            self._bind_open_page(page_label, page, page_groups[page], shape)
 
-            page_label.bind("<Button-1>", handler)
+    def _bind_open_page(self, widget, page, occs, shape):
+        # Named handler for readability/debugging (no inline lambda logic)
+        def handler(_event):
+            self.djview.open_occurrences(page, shape, occs)
+
+        widget.bind("<Button-1>", handler)
 
     def _toggle_occurrences(self, shape):
         self.occurrences_visible = not self.occurrences_visible
@@ -383,7 +515,11 @@ class ShapeBrowserGUI:
         if self.current_highlight is not None:
             self.canvas.delete(self.current_highlight)
 
-        row, col = self.shape_positions[shape.id]
+        pos = self.shape_positions.get(shape.id)
+        if pos is None:
+            return
+
+        row, col = pos
 
         self.current_highlight = self.canvas.create_rectangle(
             col * tile,
