@@ -56,6 +56,10 @@ class ShapeBrowserGUI:
         self._build_menu()
         self._build_layout()
 
+        # Allow selecting a shape by clicking anywhere inside its grid cell
+        self.canvas.bind("<Button-1>", self._on_canvas_click)
+
+
         # Default: roots only (depth=0), as in your screenshot series
         self.depth_max_entry.insert(0, "0")
         self._apply_filters()
