@@ -13,17 +13,22 @@
 
  ---
 
- ## Table: forms
- Represents JB2 “forms” encountered in a DjVu document.
+## Table: forms
+Represents top-level DjVu components that djvudict iterates over (DIRM entries).
 
- Columns:
- - id INTEGER PRIMARY KEY AUTOINCREMENT
- - position INTEGER UNIQUE NOT NULL
- - entry_name TEXT NOT NULL
- - type INTEGER NOT NULL
- - 1 = Sjbz (page)
- - 2 = Djbz (shared dictionary)
- - path_to_dump TEXT (dump folder)
+Columns:
+- id INTEGER PRIMARY KEY AUTOINCREMENT
+- position INTEGER UNIQUE NOT NULL
+- entry_name TEXT NOT NULL
+- type INTEGER NOT NULL
+  - 1 = FORM:DJVU (page component; may contain Sjbz)
+  - 2 = FORM:DJVI (shared component; may contain Djbz, but may also be non-dictionary data such as shared annotations)
+- path_to_dump TEXT (dump folder)
+
+How djvudict recognizes “dictionary” DJVI components:
+- For type=2 components, djvudict looks for a Djbz chunk inside the DJVI form (see JB2Dumper::dumpDjbz searching for CHUNK_ID_Djbz).
+- If no Djbz chunk is found, the component is treated as “not a JB2 dictionary” and nothing is dumped.
+- In our sample database, such non-dictionary DJVI components have empty path_to_dump.
 
  ---
 
