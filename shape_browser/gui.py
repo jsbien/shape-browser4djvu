@@ -438,6 +438,25 @@ class ShapeBrowserGUI:
     # Click handling
     # -------------------------------------------------
 
+
+    def _on_canvas_click(self, event):
+        """Select shape by clicking anywhere inside a grid cell."""
+        # Translate window coords to canvas coords (handles scrolling)
+        cx = self.canvas.canvasx(event.x)
+        cy = self.canvas.canvasy(event.y)
+
+        tile = self.tile_size
+        col = int(cx // tile)
+        row = int(cy // tile)
+        index = row * self.columns + col
+
+        if 0 <= index < len(self.filtered_shapes):
+            shape = self.filtered_shapes[index]
+            return self._on_click(event, shape)
+
+        return "break"
+
+
     def _on_click(self, event, shape):
         # Ctrl-click enters subtree mode
         if event.state & 0x0004:
