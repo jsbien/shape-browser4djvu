@@ -545,13 +545,13 @@ class ShapeBrowserGUI:
             if old_border is not None:
                 self.canvas.itemconfigure(old_border, outline="#c0c0c0", width=1)
 
-            # Set new selection border
-            self.selected_shape_id = shape.id
-            new_border = self.border_by_shape_id.get(shape.id)
-            if new_border is not None:
-                self.canvas.itemconfigure(new_border, outline="red", width=2)
-                # Make sure border stays visible on top of the image
-                self.canvas.tag_raise(new_border)
+        # Set new selection border
+        self.selected_shape_id = shape.id
+        new_border = self.border_by_shape_id.get(shape.id)
+        if new_border is not None:
+            self.canvas.itemconfigure(new_border, outline="red", width=2)
+            # Make sure border stays visible on top of the image
+            self.canvas.tag_raise(new_border)
 
     # def _highlight_shape(self, shape):
     #     tile = self.tile_size
