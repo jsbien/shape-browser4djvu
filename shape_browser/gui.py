@@ -40,7 +40,10 @@ class ShapeBrowserGUI:
 
         # Selection / state
         self.current_index = None
-        self.current_highlight = None
+#        self.current_highlight = None
+        # Per-cell borders (for always-visible grid and selection highlight)
+        self.border_by_shape_id = {}
+        self.selected_shape_id = None
 
         # Subtree mode
         self.current_subtree_root = None
@@ -368,6 +371,8 @@ class ShapeBrowserGUI:
 
         self.shape_positions.clear()
         self.index_by_shape_id.clear()
+        self.border_by_shape_id.clear()
+        self.selected_shape_id = None
 
         for index, shape in enumerate(self.filtered_shapes):
             row = index // columns
@@ -383,6 +388,16 @@ class ShapeBrowserGUI:
             self._image_refs.append(tk_image)
 
             item = self.canvas.create_image(x, y, image=tk_image)
+            # Draw a visible border for each cell (above image so it remains visible)
+            border_id = self.canvas.create_rectangle(
+                col * tile,
+                row * tile,
+                col * tile + tile,
+                row * tile + tile,
+                outline="#c0c0c0",
+                width=1,
+            )
+            self.border_by_shape_id[shape.id] = border_id
 
             parent_text = shape.parent_id if shape.parent_id is not None else "-"
             badge_text = f"{shape.depth}.{shape.sibling_index} (p:{parent_text})"
@@ -514,12 +529,6 @@ class ShapeBrowserGUI:
                 )
                 occ_btn.pack(anchor="nw", padx=35, pady=1)
         
-    # def _bind_open_page(self, widget, page, occs, shape):
-    #     # Named handler for readability/debugging (no inline lambda logic)
-    #     def handler(_event):
-    #         self.djview.open_occurrences(page, shape, occs)
-
-    #     widget.bind("<Button-1>", handler)
 
     def _toggle_occurrences(self, shape):
         self.occurrences_visible = not self.occurrences_visible
@@ -530,25 +539,40 @@ class ShapeBrowserGUI:
     # -------------------------------------------------
 
     def _highlight_shape(self, shape):
-        tile = self.tile_size
+        # Reset previous selection border
+        if self.selected_shape_id is not None:
+            old_border = self.border_by_shape_id.get(self.selected_shape_id)
+            if old_border is not None:
+                self.canvas.itemconfigure(old_border, outline="#c0c0c0", width=1)
 
-        if self.current_highlight is not None:
-            self.canvas.delete(self.current_highlight)
+            # Set new selection border
+            self.selected_shape_id = shape.id
+            new_border = self.border_by_shape_id.get(shape.id)
+            if new_border is not None:
+                self.canvas.itemconfigure(new_border, outline="red", width=2)
+                # Make sure border stays visible on top of the image
+                self.canvas.tag_raise(new_border)
 
-        pos = self.shape_positions.get(shape.id)
-        if pos is None:
-            return
+    # def _highlight_shape(self, shape):
+    #     tile = self.tile_size
 
-        row, col = pos
+    #     if self.current_highlight is not None:
+    #         self.canvas.delete(self.current_highlight)
 
-        self.current_highlight = self.canvas.create_rectangle(
-            col * tile,
-            row * tile,
-            col * tile + tile,
-            row * tile + tile,
-            outline="red",
-            width=2,
-        )
+    #     pos = self.shape_positions.get(shape.id)
+    #     if pos is None:
+    #         return
+
+    #     row, col = pos
+
+    #     self.current_highlight = self.canvas.create_rectangle(
+    #         col * tile,
+    #         row * tile,
+    #         col * tile + tile,
+    #         row * tile + tile,
+    #         outline="red",
+    #         width=2,
+    #     )
 
     # -------------------------------------------------
     # Keyboard navigation
