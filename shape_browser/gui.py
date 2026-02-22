@@ -445,6 +445,8 @@ class ShapeBrowserGUI:
         else:
             self._select_shape(shape)
 
+        return "break"
+
     def _select_shape(self, shape):
         self.current_index = self.index_by_shape_id.get(shape.id)
         self._highlight_shape(shape)
