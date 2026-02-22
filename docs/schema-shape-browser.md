@@ -30,46 +30,47 @@
  ### shapes
  Stores bitmap shapes.
 
- Columns used:
- - id (PK)
- - dictionary_id (FK → dictionaries.id)
- - parent_id (tree parent; may be NULL or -1 for roots, depending on dataset)
- - width, height (pixels)
- - bits (bitmap payload; format is renderer-specific)
+Columns used:
+- id (PK)
+- dictionary_id (FK → dictionaries.id)
+- parent_id (tree parent; may be NULL or -1 for roots, depending on dataset)
+- width, height (pixels)
+- bits (bitmap payload; in this dataset it is a complete PBM (P4) file including header)
 
- ### blits
- Stores occurrences (placements) of shapes.
+### blits
+Stores occurrences (placements) of shapes.
 
- Columns used:
- - document_id (FK → documents.id)
- - shape_id (FK → shapes.id)
- - page_number (0-based)
- - b_left (x coordinate)
- - b_bottom (y coordinate)
+Columns used:
+- document_id (FK → documents.id)
+- shape_id (FK → shapes.id)
+- page_number (0-based)
+- b_left (x coordinate)
+- b_bottom (y coordinate)
 
- Coordinate convention used by Shape Browser:
- - origin is bottom-left
- - x = b_left, y = b_bottom
+Coordinate convention used by Shape Browser:
+- origin is bottom-left
+- x = b_left, y = b_bottom
 
- ---
+---
 
- ## Derived fields shown in the GUI
+## Derived fields shown in the GUI
 
- These are not stored directly; they’re computed in shape_browser/model.py.
+These are not stored directly; they’re computed in shape_browser/model.py.
 
- ### Usage (shape.usage_count)
- Definition: number of occurrences of the shape in blits for the selected document.
+### Usage (shape.usage_count)
+Definition: number of occurrences of the shape in blits for the selected document.
 
- Computation: for every row in blits belonging to the document:
- - create an Occurrence
- - append it to shape.occurrences
- - increment shape.usage_count
+Computation: for every row in blits belonging to the document:
+- create an Occurrence
+- append it to shape.occurrences
+- increment shape.usage_count
 
- Equivalent SQL for one document:
-  SELECT shape_id, COUNT() AS usage
-  FROM blits
-  WHERE document_id = <doc_id>
-  GROUP BY shape_id;
+Equivalent SQL for one document:
+ SELECT shape_id, COUNT(*) AS usage
+ FROM blits
+ WHERE document_id = <doc_id>
+ GROUP BY shape_id;
+
 
  ### Subtree usage (shape.subtree_count)
  Definition: sum of usage_count for the shape plus all descendants in its tree.
