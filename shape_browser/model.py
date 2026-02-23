@@ -1,6 +1,7 @@
 class Shape:
     def __init__(self, row):
         self.id = row["id"]
+        self.dictionary_id = row.get("dictionary_id")
         self.parent_id = row["parent_id"]
         self.width = row["width"]
         self.height = row["height"]
@@ -8,15 +9,23 @@ class Shape:
         # REQUIRED for renderer
         self.bits = row["bits"]
 
+        # Derived / computed (lazy)
         self.children = []
         self.parent = None
+        self.children_loaded = False
 
         self.depth = 0
         self.sibling_index = 0
 
-        self.usage_count = 0
-        self.subtree_count = 0
-        self.occurrences = []
+        # Usage is required and comes from sb_shape_usage join
+        self.usage_count = int(row.get("usage_count", 0))
+
+        # Subtree usage: computed only for loaded subtree for now
+        self.subtree_count = self.usage_count
+
+        # Occurrences loaded lazily
+        self.occurrences = None  # None = not loaded yet
+
 
 class Occurrence:
     def __init__(self, blit_row):
@@ -27,90 +36,98 @@ class Occurrence:
 
 
 class ShapeModel:
-    def __init__(self, shape_rows, blit_rows):
-        # ----------------------------------------
-        # Create shape objects
-        # ----------------------------------------
+    """
+    Lazy, repository-backed shape model.
+
+    This avoids loading all shapes/blits (needed for very large datasets).
+    """
+
+    def __init__(self, repo, document_id, root_rows):
+        self.repo = repo
+        self.document_id = document_id
+
+        # Loaded shapes cache (shape_id -> Shape)
         self.shapes = {}
 
-        for row in shape_rows:
+        # Root shapes (loaded at startup)
+        self.root_shapes = []
+        for row in root_rows:
             shape = Shape(row)
             self.shapes[shape.id] = shape
+            self.root_shapes.append(shape)
 
-        # ----------------------------------------
-        # Build parent-child relationships
-        # ----------------------------------------
-        for shape in self.shapes.values():
-            if shape.parent_id and shape.parent_id in self.shapes:
-                parent = self.shapes[shape.parent_id]
-                shape.parent = parent
-                parent.children.append(shape)
-
-        # ----------------------------------------
-        # Identify roots
-        # ----------------------------------------
-        self.root_shapes = [
-            shape for shape in self.shapes.values()
-            if shape.parent is None
-        ]
-
-        # ----------------------------------------
-        # Compute depth
-        # ----------------------------------------
-        for root in self.root_shapes:
-            self._assign_depth(root, depth=0)
-
-        # ----------------------------------------
-        # Attach occurrences
-        # ----------------------------------------
-        for row in blit_rows:
-            occ = Occurrence(row)
-            if occ.shape_id in self.shapes:
-                shape = self.shapes[occ.shape_id]
-                shape.occurrences.append(occ)
-                shape.usage_count += 1
-
-        # ----------------------------------------
-        # Compute subtree usage counts
-        # ----------------------------------------
-        for root in self.root_shapes:
-            self._compute_subtree_count(root)
-
-        # ----------------------------------------
-        # Assign sibling indices
-        # ----------------------------------------
-        self._assign_sibling_indices()
-
-    # --------------------------------------------
-    # Depth assignment (DFS)
-    # --------------------------------------------
-    def _assign_depth(self, shape, depth):
-        shape.depth = depth
-        for child in shape.children:
-            self._assign_depth(child, depth + 1)
-
-    # --------------------------------------------
-    # Subtree count (post-order traversal)
-    # --------------------------------------------
-    def _compute_subtree_count(self, shape):
-        total = shape.usage_count
-
-        for child in shape.children:
-            total += self._compute_subtree_count(child)
-
-        shape.subtree_count = total
-        return total
-
-    # --------------------------------------------
-    # Sibling index assignment
-    # --------------------------------------------
-    def _assign_sibling_indices(self):
-        # Roots
+        # Assign root indices and depth
         for i, root in enumerate(self.root_shapes):
+            root.depth = 0
             root.sibling_index = i + 1
 
-        # Children
-        for shape in self.shapes.values():
-            if shape.children:
-                for i, child in enumerate(shape.children):
-                    child.sibling_index = i + 1
+    # -----------------------------
+    # Lazy loading
+    # -----------------------------
+
+    def ensure_children_loaded(self, shape):
+        if shape.children_loaded:
+            return
+
+        # Fetch children within same dictionary and document
+        child_rows = self.repo.fetch_child_shapes(
+            self.document_id,
+            shape.dictionary_id,
+            shape.id,
+        )
+
+        children = []
+        for i, row in enumerate(child_rows):
+            child = self.shapes.get(row["id"])
+            if child is None:
+                child = Shape(row)
+                self.shapes[child.id] = child
+
+            child.parent = shape
+            child.depth = shape.depth + 1
+            child.sibling_index = i + 1
+            children.append(child)
+
+        shape.children = children
+        shape.children_loaded = True
+
+    def get_occurrences(self, shape):
+        if shape.occurrences is not None:
+            return shape.occurrences
+
+        rows = self.repo.fetch_occurrences(self.document_id, shape.id)
+        shape.occurrences = [Occurrence(r) for r in rows]
+        return shape.occurrences
+
+    # -----------------------------
+    # Subtree support (lazy)
+    # -----------------------------
+
+    def collect_subtree(self, root_shape):
+        """
+        Return a list of shapes in the subtree of root_shape.
+
+        Loads children lazily as needed.
+        Also recomputes subtree_count for the loaded subtree.
+        """
+        result = []
+
+        def dfs(node):
+            result.append(node)
+            self.ensure_children_loaded(node)
+            for ch in node.children:
+                dfs(ch)
+
+        dfs(root_shape)
+
+        # Recompute subtree counts for this loaded subtree only
+        def post(node):
+            self.ensure_children_loaded(node)
+            total = node.usage_count
+            for ch in node.children:
+                total += post(ch)
+            node.subtree_count = total
+            return total
+
+        post(root_shape)
+        return result
