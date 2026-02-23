@@ -33,23 +33,28 @@ def main():
 
     print(f"Shape Browser {VERSION}")
     print(f"Build: {BUILD_TIMESTAMP}")
-    print("Connecting to database...")
+
+    # ---------------------------------------------------
+    # Use auxiliary DB automatically
+    # ---------------------------------------------------
+    aux_db = args.database + "__aux"
+    print(f"Connecting to database (aux): {aux_db}")
 
     repo = ShapeRepository(
         args.host,
         args.user,
         args.password,
-        args.database,
+        aux_db,
     )
 
-    print("Loading shapes...")
-    shapes = repo.fetch_shapes(args.document)
+    # ---------------------------------------------------
+    # Lazy model: load only root shapes
+    # ---------------------------------------------------
+    print("Loading root shapes...")
+    root_rows = repo.fetch_root_shapes(args.document)
 
-    print("Loading blits...")
-    blits = repo.fetch_blits(args.document)
-
-    print("Building model...")
-    model = ShapeModel(shapes, blits)
+    print("Building model (lazy)...")
+    model = ShapeModel(repo, args.document, root_rows)
 
     print("Initializing renderer...")
     renderer = ShapeRenderer()
@@ -57,7 +62,6 @@ def main():
     # ---------------------------------------------------
     # Resolve document filename
     # ---------------------------------------------------
-
     documents = repo.fetch_documents()
 
     document_row = None
@@ -78,7 +82,6 @@ def main():
         os.path.join(args.djvu_root, document_filename)
     )
 
-    # Keep this — absolutely correct safeguard
     if not os.path.exists(document_path):
         print(f"DjVu file not found: {document_path}")
         sys.exit(1)
@@ -87,23 +90,17 @@ def main():
     page_info = PageInfoProvider(document_path)
     print(f"DjVu page count: {page_info.get_page_count()}")
 
-    # ---------------------------------------------------
-    # Initialize DjView launcher
-    # ---------------------------------------------------
-
     print("Initializing DjView launcher...")
     djview_launcher = DjViewLauncher(document_path, page_info)
-    # ---------------------------------------------------
 
     print("Launching GUI...")
-
     root = tk.Tk()
 
     app = ShapeBrowserGUI(
         root=root,
         model=model,
         renderer=renderer,
-        database_name=args.database,
+        database_name=aux_db,
         version=VERSION,
         build_timestamp=BUILD_TIMESTAMP,
         djview_launcher=djview_launcher,

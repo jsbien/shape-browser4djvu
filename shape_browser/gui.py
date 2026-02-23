@@ -56,10 +56,6 @@ class ShapeBrowserGUI:
         self._build_menu()
         self._build_layout()
 
-        # Allow selecting a shape by clicking anywhere inside its grid cell
-        self.canvas.bind("<Button-1>", self._on_canvas_click)
-
-
         # Default: roots only (depth=0), as in your screenshot series
         self.depth_max_entry.insert(0, "0")
         self._apply_filters()
@@ -249,12 +245,26 @@ class ShapeBrowserGUI:
         self.current_subtree_root = root_shape
         self.back_button.pack(side="right", padx=5)
 
-        self.filtered_shapes = self._collect_subtree_nodes(root_shape)
+        # Lazy subtree load via model (children fetched on demand)
+        self.filtered_shapes = self.model.collect_subtree(root_shape)
         self.current_index = None
-        self.current_highlight = None
 
         self._draw_all_shapes()
         self._update_info_bar()
+    
+    # def _enter_subtree_mode(self, root_shape):
+    #     if self.current_subtree_root is not None:
+    #         return
+
+    #     self.current_subtree_root = root_shape
+    #     self.back_button.pack(side="right", padx=5)
+
+    #     self.filtered_shapes = self._collect_subtree_nodes(root_shape)
+    #     self.current_index = None
+    #     self.current_highlight = None
+
+    #     self._draw_all_shapes()
+    #     self._update_info_bar()
 
     def _exit_subtree_mode(self):
         self.current_subtree_root = None
@@ -438,33 +448,12 @@ class ShapeBrowserGUI:
     # Click handling
     # -------------------------------------------------
 
-
-    def _on_canvas_click(self, event):
-        """Select shape by clicking anywhere inside a grid cell."""
-        # Translate window coords to canvas coords (handles scrolling)
-        cx = self.canvas.canvasx(event.x)
-        cy = self.canvas.canvasy(event.y)
-
-        tile = self.tile_size
-        col = int(cx // tile)
-        row = int(cy // tile)
-        index = row * self.columns + col
-
-        if 0 <= index < len(self.filtered_shapes):
-            shape = self.filtered_shapes[index]
-            return self._on_click(event, shape)
-
-        return "break"
-
-
     def _on_click(self, event, shape):
         # Ctrl-click enters subtree mode
         if event.state & 0x0004:
             self._enter_subtree_mode(shape)
         else:
             self._select_shape(shape)
-
-        return "break"
 
     def _select_shape(self, shape):
         self.current_index = self.index_by_shape_id.get(shape.id)
@@ -495,7 +484,11 @@ class ShapeBrowserGUI:
             justify="left",
         ).pack(anchor="nw", padx=10, pady=5)
 
-        occurrences = shape.occurrences
+        # occurrences = shape.occurrences
+        # if not occurrences:
+        #     return
+
+        occurrences = self.model.get_occurrences(shape)
         if not occurrences:
             return
 
